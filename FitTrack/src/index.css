@@ -9,3 +9,14 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+@keyframes slideUp {
+  from {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}

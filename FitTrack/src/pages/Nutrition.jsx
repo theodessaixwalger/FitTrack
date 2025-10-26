@@ -1,56 +1,45 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import AddFoodModal from '../components/AddFoodModal'
-import { getMealsByDate, createMeal, addFoodToMeal, removeFoodFromMeal, calculateDailyNutrition } from '../services/mealService'
+import { getMealsByDate, createMeal, addFoodToMeal, removeFoodFromMeal } from '../services/mealService'
+import { useNutrition } from '../context/NutritionContext'
 
 function Nutrition() {
+  const { 
+    meals: contextMeals,
+    dailyNutrition, 
+    loading: contextLoading,
+    calorieGoal,
+    proteinGoal,
+    carbsGoal,
+    fatsGoal,
+    refreshNutrition,
+    calculateProgress,
+    getRemainingCalories
+  } = useNutrition()
+
   const [meals, setMeals] = useState([])
-  const [dailyNutrition, setDailyNutrition] = useState({
-    calories: 0,
-    proteins: 0,
-    carbs: 0,
-    fats: 0
-  })
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [deletingItem, setDeletingItem] = useState(null)
 
-  const userId = 'user-demo' // À remplacer par l'ID réel de l'utilisateur connecté
+  const userId = 'user-demo'
   const today = new Date().toISOString().split('T')[0]
 
   useEffect(() => {
-    loadMeals()
-  }, [])
-
-  const loadMeals = async () => {
-    try {
-      setLoading(true)
-      const data = await getMealsByDate(userId, today)
-      setMeals(data)
-      const nutrition = calculateDailyNutrition(data)
-      setDailyNutrition(nutrition)
-    } catch (error) {
-      console.error('Erreur chargement repas:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+    setMeals(contextMeals)
+  }, [contextMeals])
 
   const handleAddFood = async (food) => {
     try {
-      // Trouver ou créer le repas
       let meal = meals.find(m => m.meal_type === selectedMealType)
       
       if (!meal) {
         meal = await createMeal(userId, selectedMealType, today)
       }
 
-      // Ajouter l'aliment au repas
       await addFoodToMeal(meal.id, food.id, food.serving_size)
-      
-      // Recharger les repas
-      await loadMeals()
+      await refreshNutrition() // Rafraîchir le contexte
     } catch (error) {
       console.error('Erreur ajout aliment:', error)
     }
@@ -60,7 +49,7 @@ function Nutrition() {
     try {
       setDeletingItem(mealFoodId)
       await removeFoodFromMeal(mealFoodId)
-      await loadMeals()
+      await refreshNutrition() // Rafraîchir le contexte
     } catch (error) {
       console.error('Erreur suppression aliment:', error)
     } finally {
@@ -75,11 +64,6 @@ function Nutrition() {
 
   const getMealsByType = (type) => {
     return meals.filter(m => m.meal_type === type)
-  }
-
-  const calculateProgress = () => {
-    const goal = 2200
-    return Math.min((dailyNutrition.calories / goal) * 100, 100)
   }
 
   const MealSection = ({ title, emoji, mealType }) => {
@@ -223,7 +207,7 @@ function Nutrition() {
     )
   }
 
-  if (loading) {
+  if (contextLoading) {
     return (
       <div className="page">
         <div style={{ 
@@ -263,7 +247,7 @@ function Nutrition() {
           <div className="label">Calories aujourd'hui</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
             <span className="value">{Math.round(dailyNutrition.calories)}</span>
-            <span className="unit">/ 2,200 kcal</span>
+            <span className="unit">/ {calorieGoal.toLocaleString()} kcal</span>
           </div>
           <div style={{ marginTop: '24px' }}>
             <div className="progress-bar" style={{ background: 'rgba(255,255,255,0.2)' }}>
@@ -279,8 +263,8 @@ function Nutrition() {
               opacity: '0.9',
               fontWeight: '600'
             }}>
-              {dailyNutrition.calories < 2200 
-                ? `Plus que ${Math.round(2200 - dailyNutrition.calories)} kcal pour atteindre votre objectif 🎯`
+              {dailyNutrition.calories < calorieGoal 
+                ? `Plus que ${Math.round(getRemainingCalories())} kcal pour atteindre votre objectif 🎯`
                 : `Objectif atteint ! 🎉`
               }
             </div>
@@ -298,7 +282,7 @@ function Nutrition() {
                   <div style={{ fontSize: '11px', opacity: '0.9', fontWeight: '600' }}>Protéines</div>
                 </div>
               </div>
-              <div className="macro-value">{Math.round(dailyNutrition.proteins)} / 150g</div>
+              <div className="macro-value">{Math.round(dailyNutrition.proteins)} / {proteinGoal}g</div>
             </div>
             <div className="macro-item">
               <div className="macro-circle" style={{ background: 'linear-gradient(135deg, #4ECDC4 0%, #44A9A3 100%)' }}>
@@ -307,7 +291,7 @@ function Nutrition() {
                   <div style={{ fontSize: '11px', opacity: '0.9', fontWeight: '600' }}>Glucides</div>
                 </div>
               </div>
-              <div className="macro-value">{Math.round(dailyNutrition.carbs)} / 250g</div>
+              <div className="macro-value">{Math.round(dailyNutrition.carbs)} / {carbsGoal}g</div>
             </div>
             <div className="macro-item">
               <div className="macro-circle" style={{ background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)' }}>
@@ -316,7 +300,7 @@ function Nutrition() {
                   <div style={{ fontSize: '11px', opacity: '0.9', fontWeight: '600' }}>Lipides</div>
                 </div>
               </div>
-              <div className="macro-value">{Math.round(dailyNutrition.fats)} / 70g</div>
+              <div className="macro-value">{Math.round(dailyNutrition.fats)} / {fatsGoal}g</div>
             </div>
           </div>
         </div>
