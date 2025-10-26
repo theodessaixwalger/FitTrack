@@ -1083,3 +1083,43 @@ a:focus-visible {
     display: none !important;
   }
 }
+
+/* Animation de rotation pour le loader */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animation de suppression */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+/* Hover effects pour les boutons de suppression */
+.list-item button:hover {
+  transform: scale(1.05);
+}
+
+.list-item button:active {
+  transform: scale(0.95);
+}
+
+/* Transition smooth pour la suppression */
+.list-item {
+  transition: all 0.3s ease;
+}
+
+.list-item.deleting {
+  animation: fadeOut 0.3s ease forwards;
+}
