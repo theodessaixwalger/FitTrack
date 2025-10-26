@@ -20,7 +20,7 @@ function Exercise() {
       <div className="page-content">
         {/* Carte d'entraînement actif */}
         <div className="hero-card" style={{ 
-          background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)'
+          background: 'var(--gradient-primary)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
             <div>
@@ -62,7 +62,7 @@ function Exercise() {
           <button className="btn" style={{ 
             marginTop: '20px', 
             background: 'white', 
-            color: '#667EEA',
+            color: '#FF6B35',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
           }}>
             <Play size={20} />
