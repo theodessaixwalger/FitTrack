@@ -1,279 +1,580 @@
-import { Dumbbell, TrendingUp, Plus, Play, Award, Calendar } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { Plus, Trash2, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react'
+import { getActiveProgram, createProgram, getProgramDays, addDay, addExercise, deleteExercise } from '../services/exerciceService'
 
-function Exercise() {
-  const muscleGroups = [
-    { name: 'Pectoraux', emoji: '💪', exercises: 12, color: '#FF6B35' },
-    { name: 'Dos', emoji: '🦾', exercises: 15, color: '#4ECDC4' },
-    { name: 'Épaules', emoji: '🏋️', exercises: 10, color: '#2ECC71' },
-    { name: 'Biceps', emoji: '💪', exercises: 8, color: '#667EEA' },
-    { name: 'Triceps', emoji: '🔨', exercises: 8, color: '#F39C12' },
-    { name: 'Jambes', emoji: '🦵', exercises: 18, color: '#E74C3C' },
-  ];
+const DAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+
+function Training() {
+  const userId = 'user123'
+  const [program, setProgram] = useState(null)
+  const [days, setDays] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [expandedDay, setExpandedDay] = useState(null)
+  const [deletingExercise, setDeletingExercise] = useState(null)
+
+  // Modals
+  const [showNewProgram, setShowNewProgram] = useState(false)
+  const [showNewDay, setShowNewDay] = useState(false)
+  const [showNewExercise, setShowNewExercise] = useState(false)
+  const [selectedDayId, setSelectedDayId] = useState(null)
+
+  // Forms
+  const [programName, setProgramName] = useState('')
+  const [dayName, setDayName] = useState('')
+  const [dayOfWeek, setDayOfWeek] = useState(1)
+  const [exerciseName, setExerciseName] = useState('')
+  const [sets, setSets] = useState(3)
+  const [reps, setReps] = useState('10-12')
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  async function loadData() {
+    setLoading(true)
+    const prog = await getActiveProgram(userId)
+    setProgram(prog)
+    if (prog) {
+      const programDays = await getProgramDays(prog.id)
+      setDays(programDays)
+    }
+    setLoading(false)
+  }
+
+  async function handleCreateProgram(e) {
+    e.preventDefault()
+    await createProgram(userId, programName)
+    setProgramName('')
+    setShowNewProgram(false)
+    loadData()
+  }
+
+  async function handleAddDay(e) {
+    e.preventDefault()
+    await addDay(program.id, dayOfWeek, dayName)
+    setDayName('')
+    setDayOfWeek(1)
+    setShowNewDay(false)
+    loadData()
+  }
+
+  async function handleAddExercise(e) {
+    e.preventDefault()
+    await addExercise(selectedDayId, exerciseName, sets, reps)
+    setExerciseName('')
+    setSets(3)
+    setReps('10-12')
+    setShowNewExercise(false)
+    setSelectedDayId(null)
+    loadData()
+  }
+
+  async function handleDeleteExercise(exerciseId) {
+    if (confirm('Supprimer cet exercice ?')) {
+      setDeletingExercise(exerciseId)
+      await deleteExercise(exerciseId)
+      await loadData()
+      setDeletingExercise(null)
+    }
+  }
+
+  const getTodayDayOfWeek = () => new Date().getDay()
+
+  const getTotalExercises = () => {
+    return days.reduce((total, day) => total + (day.exercises?.length || 0), 0)
+  }
+
+  const DaySection = ({ day }) => {
+    const hasExercises = day.exercises && day.exercises.length > 0
+    const isToday = day.day_of_week === getTodayDayOfWeek()
+
+    return (
+      <div className="section">
+        <div className="section-header">
+          <h2 className="section-title">
+            {isToday && <span style={{ marginRight: '8px' }}>⭐</span>}
+            {DAYS[day.day_of_week]} - {day.name}
+          </h2>
+          <button 
+            onClick={() => {
+              setSelectedDayId(day.id)
+              setShowNewExercise(true)
+            }}
+            style={{
+              background: 'var(--primary)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <Plus size={20} />
+          </button>
+        </div>
+
+        {hasExercises ? (
+          <div className="card">
+            <div className="card-body" style={{ padding: '0' }}>
+              {day.exercises.map((exercise, index) => (
+                <div 
+                  key={exercise.id} 
+                  className="list-item"
+                  style={{
+                    position: 'relative',
+                    transition: 'all 0.2s ease',
+                    opacity: deletingExercise === exercise.id ? 0.5 : 1
+                  }}
+                >
+                  <div className="list-item-left" style={{ flex: 1 }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '16px',
+                      fontWeight: '800',
+                      marginRight: '12px'
+                    }}>
+                      {index + 1}
+                    </div>
+                    <div className="list-item-info">
+                      <h3>{exercise.exercise_name}</h3>
+                      <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{exercise.sets} séries</span>
+                        <span style={{ opacity: 0.5 }}>•</span>
+                        <span>{exercise.reps} reps</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '12px' 
+                  }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="list-item-value">
+                        {exercise.sets}×{exercise.reps}
+                      </div>
+                      <div style={{ 
+                        fontSize: '11px', 
+                        color: 'var(--text-secondary)',
+                        fontWeight: '600',
+                        marginTop: '2px'
+                      }}>
+                        Séries × Reps
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteExercise(exercise.id)}
+                      disabled={deletingExercise === exercise.id}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#EF4444',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s ease',
+                        opacity: deletingExercise === exercise.id ? 0.5 : 1
+                      }}
+                      onMouseOver={(e) => {
+                        if (deletingExercise !== exercise.id) {
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                        }
+                      }}
+                      onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      {deletingExercise === exercise.id ? (
+                        <div style={{
+                          width: '20px',
+                          height: '20px',
+                          border: '2px solid currentColor',
+                          borderTopColor: 'transparent',
+                          borderRadius: '50%',
+                          animation: 'spin 0.6s linear infinite'
+                        }} />
+                      ) : (
+                        <Trash2 size={18} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            padding: '32px',
+            textAlign: 'center',
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            fontWeight: '600',
+            background: 'var(--surface)',
+            borderRadius: '16px',
+            border: '2px dashed var(--border-light)'
+          }}>
+            Aucun exercice ajouté
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '40px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '4px solid var(--border-light)',
+            borderTopColor: 'var(--primary)',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite'
+          }} />
+          <div style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>
+            Chargement...
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!program) {
+    return (
+      <div className="page">
+        <div className="page-header">
+          <h1>Entraînements</h1>
+          <p className="subtitle">Créez votre programme personnalisé</p>
+        </div>
+
+        <div className="page-content">
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            background: 'var(--surface)',
+            borderRadius: '20px',
+            border: '2px dashed var(--border-light)'
+          }}>
+            <div style={{ fontSize: '60px', marginBottom: '20px' }}>💪</div>
+            <h2 style={{ 
+              marginBottom: '12px', 
+              fontSize: '24px',
+              fontWeight: '800',
+              color: 'var(--text-primary)'
+            }}>
+              Aucun programme actif
+            </h2>
+            <p style={{ 
+              color: 'var(--text-secondary)', 
+              marginBottom: '32px',
+              fontWeight: '600'
+            }}>
+              Commencez par créer votre premier programme d'entraînement
+            </p>
+            <button 
+              className="btn"
+              onClick={() => setShowNewProgram(true)}
+            >
+              <Plus size={20} />
+              Créer un programme
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Nouveau Programme */}
+        {showNewProgram && (
+          <div className="modal-overlay" onClick={() => setShowNewProgram(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <h2 style={{ marginBottom: '20px' }}>Nouveau programme</h2>
+              <form onSubmit={handleCreateProgram}>
+                <input
+                  type="text"
+                  placeholder="Nom du programme (ex: Split 5 jours)"
+                  value={programName}
+                  onChange={(e) => setProgramName(e.target.value)}
+                  required
+                  autoFocus
+                  style={{ marginBottom: '20px' }}
+                />
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline" 
+                    onClick={() => setShowNewProgram(false)}
+                    style={{ flex: 1 }}
+                  >
+                    Annuler
+                  </button>
+                  <button type="submit" className="btn" style={{ flex: 1 }}>
+                    Créer
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="page">
       <div className="page-header">
-        <h1>Exercices</h1>
-        <p className="subtitle">Planifiez vos entraînements</p>
+        <h1>Entraînements</h1>
+        <p className="subtitle">Suivez votre programme d'entraînement</p>
       </div>
 
       <div className="page-content">
-        {/* Carte d'entraînement actif */}
-        <div className="hero-card" style={{ 
+        {/* Hero Card - Programme actif */}
+        <div className="hero-card" style={{
           background: 'var(--gradient-primary)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-            <div>
-              <div className="label">Programme en cours</div>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', marginTop: '8px', marginBottom: '8px', letterSpacing: '-0.5px' }}>
-                Push Day
-              </h2>
-              <p style={{ fontSize: '14px', opacity: '0.9', fontWeight: '500' }}>
-                5 exercices • 45-60 min
-              </p>
-            </div>
-            <div style={{
-              background: 'rgba(255,255,255,0.2)',
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Dumbbell size={28} />
-            </div>
+          <div className="label">Programme actif</div>
+          <div className="value" style={{ fontSize: '32px', marginBottom: '8px' }}>
+            {program.name}
           </div>
-
-          <div style={{ marginTop: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
-              <span>Progression</span>
-              <span>3/5 exercices</span>
-            </div>
-            <div className="progress-bar" style={{ background: 'rgba(255,255,255,0.2)', height: '10px' }}>
-              <div className="progress-fill" style={{ 
-                width: '60%',
-                background: 'rgba(255,255,255,0.9)',
-                height: '10px'
-              }}></div>
-            </div>
-          </div>
-
-          <button className="btn" style={{ 
-            marginTop: '20px', 
-            background: 'white', 
-            color: '#FF6B35',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          <div style={{ 
+            display: 'flex', 
+            gap: '24px', 
+            marginTop: '24px',
+            paddingTop: '20px',
+            borderTop: '1px solid rgba(255,255,255,0.2)'
           }}>
-            <Play size={20} />
-            Reprendre l'entraînement
+            <div>
+              <div style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>
+                {days.length}
+              </div>
+              <div style={{ fontSize: '13px', opacity: 0.9, fontWeight: '600' }}>
+                Jours
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>
+                {getTotalExercises()}
+              </div>
+              <div style={{ fontSize: '13px', opacity: 0.9, fontWeight: '600' }}>
+                Exercices
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bouton Ajouter un jour */}
+        <div className="section">
+          <button 
+            className="btn"
+            onClick={() => setShowNewDay(true)}
+            style={{
+              width: '100%',
+              background: 'var(--gradient-primary-light)'
+            }}
+          >
+            <Plus size={20} />
+            Ajouter un jour d'entraînement
           </button>
         </div>
 
-        {/* Stats de la semaine */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon" style={{ color: '#FF6B35' }}>
-              <Dumbbell size={24} />
+        {/* Liste des jours */}
+        {days.length > 0 ? (
+          days.map(day => <DaySection key={day.id} day={day} />)
+        ) : (
+          <div style={{
+            padding: '60px 20px',
+            textAlign: 'center',
+            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            fontWeight: '600',
+            background: 'var(--surface)',
+            borderRadius: '16px',
+            border: '2px dashed var(--border-light)'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📅</div>
+            <div style={{ fontSize: '16px', marginBottom: '8px', color: 'var(--text-primary)' }}>
+              Aucun jour d'entraînement
             </div>
-            <div className="stat-value">12</div>
-            <div className="stat-label">Séances</div>
+            Ajoutez votre premier jour pour commencer
           </div>
-
-          <div className="stat-card">
-            <div className="stat-icon" style={{ color: '#4ECDC4' }}>
-              <TrendingUp size={24} />
-            </div>
-            <div className="stat-value">+15%</div>
-            <div className="stat-label">Force</div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon" style={{ color: '#2ECC71' }}>
-              <Calendar size={24} />
-            </div>
-            <div className="stat-value">8.2h</div>
-            <div className="stat-label">Temps total</div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon" style={{ color: '#667EEA' }}>
-              <Award size={24} />
-            </div>
-            <div className="stat-value">47</div>
-            <div className="stat-label">Records</div>
-          </div>
-        </div>
-
-        {/* Groupes musculaires */}
-        <div className="section">
-          <div className="section-header">
-            <h2 className="section-title">Groupes musculaires</h2>
-            <span className="section-link">Tous</span>
-          </div>
-
-          <div className="category-grid">
-            {muscleGroups.map((group, index) => (
-              <div key={index} className="category-card">
-                <div className="category-icon-wrapper" style={{ fontSize: '40px' }}>
-                  {group.emoji}
-                </div>
-                <div className="category-name">{group.name}</div>
-                <div className="category-count">{group.exercises} exercices</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Programmes recommandés */}
-        <div className="section">
-          <div className="section-header">
-            <h2 className="section-title">Programmes recommandés</h2>
-            <span className="section-link">Explorer</span>
-          </div>
-
-          <div className="card">
-            <div style={{
-              height: '140px',
-              background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '48px',
-              borderRadius: '20px 20px 0 0'
-            }}>
-              🔥
-            </div>
-            <div className="card-body">
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                <span className="badge badge-warning">Intermédiaire</span>
-                <span className="badge badge-primary">5 semaines</span>
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.3px' }}>
-                Programme Force & Volume
-              </h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5', fontWeight: '500' }}>
-                Développez votre force et votre masse musculaire avec ce programme complet de 5 semaines
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                  4 séances/semaine • 60 min
-                </div>
-                <button className="btn btn-small" style={{ width: 'auto' }}>
-                  Commencer
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div style={{
-              height: '140px',
-              background: 'linear-gradient(135deg, #4ECDC4 0%, #44A9A3 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '48px',
-              borderRadius: '20px 20px 0 0'
-            }}>
-              ⚡
-            </div>
-            <div className="card-body">
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                <span className="badge badge-success">Débutant</span>
-                <span className="badge badge-primary">3 semaines</span>
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.3px' }}>
-                HIIT Cardio Intensif
-              </h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.5', fontWeight: '500' }}>
-                Brûlez des calories rapidement avec ces séances de HIIT courtes mais intenses
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                  3 séances/semaine • 25 min
-                </div>
-                <button className="btn btn-small" style={{ width: 'auto' }}>
-                  Commencer
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Exercices récents */}
-        <div className="section">
-          <div className="section-header">
-            <h2 className="section-title">Exercices récents</h2>
-            <span className="section-link">Historique</span>
-          </div>
-
-          <div className="list-item">
-            <div className="list-item-left">
-              <div className="list-item-icon" style={{ 
-                background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
-                color: 'white'
-              }}>
-                💪
-              </div>
-              <div className="list-item-info">
-                <h3>Développé couché</h3>
-                <p>Pectoraux • Hier</p>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className="list-item-value">80kg</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>4×8 reps</div>
-            </div>
-          </div>
-
-          <div className="list-item">
-            <div className="list-item-left">
-              <div className="list-item-icon" style={{ 
-                background: 'linear-gradient(135deg, #4ECDC4 0%, #44A9A3 100%)',
-                color: 'white'
-              }}>
-                🦾
-              </div>
-              <div className="list-item-info">
-                <h3>Tractions</h3>
-                <p>Dos • Hier</p>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className="list-item-value">+10kg</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>3×10 reps</div>
-            </div>
-          </div>
-
-          <div className="list-item">
-            <div className="list-item-left">
-              <div className="list-item-icon" style={{ 
-                background: 'linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)',
-                color: 'white'
-              }}>
-                🏋️
-              </div>
-              <div className="list-item-info">
-                <h3>Développé militaire</h3>
-                <p>Épaules • Il y a 2 jours</p>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className="list-item-value">45kg</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>4×10 reps</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bouton d'action */}
-        <button className="btn">
-          <Plus size={20} />
-          Créer un entraînement personnalisé
-        </button>
+        )}
       </div>
+
+      {/* Modal Nouveau Jour */}
+      {showNewDay && (
+        <div className="modal-overlay" onClick={() => setShowNewDay(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h2 style={{ marginBottom: '20px' }}>Nouveau jour</h2>
+            <form onSubmit={handleAddDay}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: 'var(--text-primary)',
+                  fontSize: '14px'
+                }}>
+                  Jour de la semaine
+                </label>
+                <select
+                  value={dayOfWeek}
+                  onChange={(e) => setDayOfWeek(Number(e.target.value))}
+                  style={{ marginBottom: '16px' }}
+                >
+                  {DAYS.map((day, index) => (
+                    <option key={index} value={index}>{day}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: 'var(--text-primary)',
+                  fontSize: '14px'
+                }}>
+                  Nom du jour
+                </label>
+                <input
+                  type="text"
+                  placeholder="ex: Pectoraux / Triceps"
+                  value={dayName}
+                  onChange={(e) => setDayName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  onClick={() => setShowNewDay(false)}
+                  style={{ flex: 1 }}
+                >
+                  Annuler
+                </button>
+                <button type="submit" className="btn" style={{ flex: 1 }}>
+                  Ajouter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nouvel Exercice */}
+      {showNewExercise && (
+        <div className="modal-overlay" onClick={() => setShowNewExercise(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h2 style={{ marginBottom: '20px' }}>Nouvel exercice</h2>
+            <form onSubmit={handleAddExercise}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '8px', 
+                  fontWeight: '600',
+                  color: 'var(--text-primary)',
+                  fontSize: '14px'
+                }}>
+                  Nom de l'exercice
+                </label>
+                <input
+                  type="text"
+                  placeholder="ex: Développé couché"
+                  value={exerciseName}
+                  onChange={(e) => setExerciseName(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '12px', 
+                marginBottom: '20px' 
+              }}>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '8px', 
+                    fontSize: '13px', 
+                    fontWeight: '600',
+                    color: 'var(--text-primary)'
+                  }}>
+                    Séries
+                  </label>
+                  <input
+                    type="number"
+                    value={sets}
+                    onChange={(e) => setSets(Number(e.target.value))}
+                    min="1"
+                    max="10"
+                  />
+                </div>
+                <div>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '8px', 
+                    fontSize: '13px', 
+                    fontWeight: '600',
+                    color: 'var(--text-primary)'
+                  }}>
+                    Répétitions
+                  </label>
+                  <input
+                    type="text"
+                    value={reps}
+                    onChange={(e) => setReps(e.target.value)}
+                    placeholder="8-12"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  onClick={() => setShowNewExercise(false)}
+                  style={{ flex: 1 }}
+                >
+                  Annuler
+                </button>
+                <button type="submit" className="btn" style={{ flex: 1 }}>
+                  Ajouter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }
 
-export default Exercise;
+export default Training

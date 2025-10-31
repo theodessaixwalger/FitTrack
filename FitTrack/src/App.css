@@ -45,6 +45,7 @@
   
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+  --gradient-primary-light: linear-gradient(135deg, #fc916a 0%, #ffbe75 100%);
   --gradient-secondary: linear-gradient(135deg, #4ECDC4 0%, #44A9A3 100%);
   --gradient-success: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
   --gradient-purple: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);

@@ -59,7 +59,7 @@ function Profile() {
       <div className="page-content">
         {/* Abonnement Premium */}
         <div className="card" style={{ 
-          background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
+          background: 'var(--gradient-primary-light)',
           border: 'none',
           color: 'white'
         }}>
@@ -79,7 +79,7 @@ function Profile() {
             </div>
             <button className="btn" style={{ 
               background: 'white', 
-              color: '#667EEA',
+              color: 'var(--primary-light)',
               boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
             }}>
               Passer à Premium

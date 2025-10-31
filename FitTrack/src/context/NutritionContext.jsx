@@ -25,9 +25,9 @@ export function NutritionProvider({ children }) {
   const userId = 'user-demo' // À remplacer par l'ID réel de l'utilisateur connecté
   const today = new Date().toISOString().split('T')[0]
 
-  const calorieGoal = 2200
-  const proteinGoal = 150
-  const carbsGoal = 250
+  const calorieGoal = 2700
+  const proteinGoal = 120
+  const carbsGoal = 400
   const fatsGoal = 70
 
   useEffect(() => {
