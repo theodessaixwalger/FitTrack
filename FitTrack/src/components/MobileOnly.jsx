@@ -1,6 +1,29 @@
+// src/components/MobileOnly.jsx
+import { useState, useEffect } from 'react';
 import { Smartphone, Tablet, Monitor } from 'lucide-react';
 
-function MobileOnly() {
+function MobileOnly({ children }) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const width = window.innerWidth;
+      setWindowWidth(width);
+      setIsMobile(width <= 480);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  if (isMobile) {
+    return children; // Affiche l'app si mobile
+  }
+
+  // Affiche le message si desktop
   return (
     <div style={{
       display: 'flex',
@@ -42,7 +65,7 @@ function MobileOnly() {
             <Smartphone size={36} color="white" strokeWidth={2.5} />
           </div>
         </div>
-        
+
         <h1 style={{ 
           fontSize: '36px', 
           marginBottom: '12px',
@@ -54,7 +77,7 @@ function MobileOnly() {
         }}>
           FitTrack
         </h1>
-        
+
         <div style={{
           width: '80px',
           height: '4px',
@@ -62,7 +85,7 @@ function MobileOnly() {
           margin: '0 auto 24px',
           borderRadius: '2px'
         }}></div>
-        
+
         <p style={{ 
           fontSize: '18px', 
           marginBottom: '32px',
@@ -72,7 +95,7 @@ function MobileOnly() {
         }}>
           Cette application est conçue exclusivement pour les appareils mobiles
         </p>
-        
+
         <div style={{
           background: '#F8F9FA',
           padding: '24px',
@@ -229,7 +252,7 @@ function MobileOnly() {
         borderRadius: '12px',
         backdropFilter: 'blur(10px)'
       }}>
-        <div>Largeur actuelle : <strong>{window.innerWidth}px</strong></div>
+        <div>Largeur actuelle : <strong>{windowWidth}px</strong></div>
         <div>Largeur requise : <strong>≤ 480px</strong></div>
       </div>
     </div>

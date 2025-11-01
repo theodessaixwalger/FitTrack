@@ -1,6 +1,20 @@
 import { User, Target, Award, TrendingUp, Settings, Bell, Shield, HelpCircle, LogOut, ChevronRight, Crown, Flame, Calendar, Activity } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 function Profile() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const fullName = user?.user_metadata?.full_name || 'Utilisateur';
+  const email = user?.email || '';
+  const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase();
+
   return (
     <div className="page">
       <div className="page-header" style={{ 
@@ -23,11 +37,11 @@ function Profile() {
             border: '4px solid rgba(255,255,255,0.3)',
             boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
           }}>
-            TW
+            {initials}
           </div>
           <div style={{ flex: 1 }}>
-            <h1 style={{ marginBottom: '6px' }}>Théo Walger</h1>
-            <p style={{ opacity: '0.9', fontSize: '14px', fontWeight: '500' }}>theo.dessaixwalger@gmail.com</p>
+            <h1 style={{ marginBottom: '6px' }}>{fullName}</h1>
+            <p style={{ opacity: '0.9', fontSize: '14px', fontWeight: '500' }}>{email}</p>
           </div>
         </div>
 
@@ -227,11 +241,15 @@ function Profile() {
         </div>
 
         {/* Déconnexion */}
-        <button className="btn btn-outline" style={{ 
-          color: 'var(--danger)', 
-          borderColor: 'var(--danger)',
-          marginBottom: '20px'
-        }}>
+        <button 
+          onClick={handleLogout}
+          className="btn btn-outline" 
+          style={{ 
+            color: 'var(--danger)', 
+            borderColor: 'var(--danger)',
+            marginBottom: '20px'
+          }}
+        >
           <LogOut size={20} />
           Se déconnecter
         </button>
