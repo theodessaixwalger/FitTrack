@@ -1,5 +1,8 @@
+// src/context/NutritionContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react'
 import { getMealsByDate, calculateDailyNutrition } from '../services/mealService'
+import { getUserProfile } from '../services/profileService'
+import { useAuth } from './AuthContext'
 
 const NutritionContext = createContext()
 
@@ -12,6 +15,8 @@ export function useNutrition() {
 }
 
 export function NutritionProvider({ children }) {
+  const { user } = useAuth() // ✅ Récupérer l'utilisateur connecté
+  
   const [meals, setMeals] = useState([])
   const [dailyNutrition, setDailyNutrition] = useState({
     calories: 0,
@@ -19,25 +24,56 @@ export function NutritionProvider({ children }) {
     carbs: 0,
     fats: 0
   })
+  
+  // ✅ Objectifs depuis le profil utilisateur
+  const [nutritionGoals, setNutritionGoals] = useState({
+    calorieGoal: 2700,
+    proteinGoal: 120,
+    carbsGoal: 400,
+    fatsGoal: 70
+  })
+  
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(Date.now())
 
-  const userId = 'user-demo' // À remplacer par l'ID réel de l'utilisateur connecté
   const today = new Date().toISOString().split('T')[0]
 
-  const calorieGoal = 2700
-  const proteinGoal = 120
-  const carbsGoal = 400
-  const fatsGoal = 70
-
+  // ✅ Charger le profil utilisateur au démarrage
   useEffect(() => {
-    loadMeals()
-  }, [])
+    async function loadUserProfile() {
+      if (user) {
+        try {
+          const profile = await getUserProfile()
+          if (profile) {
+            setNutritionGoals({
+              calorieGoal: profile.daily_calorie_goal || 2700,
+              proteinGoal: profile.daily_protein_goal || 120,
+              carbsGoal: profile.daily_carbs_goal || 400,
+              fatsGoal: profile.daily_fats_goal || 70
+            })
+          }
+        } catch (error) {
+          console.error('Erreur chargement profil:', error)
+        }
+      }
+    }
+    
+    loadUserProfile()
+  }, [user])
+
+  // ✅ Charger les repas du jour
+  useEffect(() => {
+    if (user) {
+      loadMeals()
+    }
+  }, [user])
 
   const loadMeals = async () => {
+    if (!user) return
+
     try {
       setLoading(true)
-      const data = await getMealsByDate(userId, today)
+      const data = await getMealsByDate(user.id, today) // ✅ Utiliser user.id
       setMeals(data)
       const nutrition = calculateDailyNutrition(data)
       setDailyNutrition(nutrition)
@@ -54,21 +90,21 @@ export function NutritionProvider({ children }) {
   }
 
   const calculateProgress = () => {
-    return Math.min((dailyNutrition.calories / calorieGoal) * 100, 100)
+    return Math.min((dailyNutrition.calories / nutritionGoals.calorieGoal) * 100, 100)
   }
 
   const getRemainingCalories = () => {
-    return Math.max(calorieGoal - dailyNutrition.calories, 0)
+    return Math.max(nutritionGoals.calorieGoal - dailyNutrition.calories, 0)
   }
 
   const value = {
     meals,
     dailyNutrition,
     loading,
-    calorieGoal,
-    proteinGoal,
-    carbsGoal,
-    fatsGoal,
+    calorieGoal: nutritionGoals.calorieGoal,      // ✅ Depuis le profil
+    proteinGoal: nutritionGoals.proteinGoal,      // ✅ Depuis le profil
+    carbsGoal: nutritionGoals.carbsGoal,          // ✅ Depuis le profil
+    fatsGoal: nutritionGoals.fatsGoal,            // ✅ Depuis le profil
     lastUpdate,
     refreshNutrition,
     calculateProgress,
