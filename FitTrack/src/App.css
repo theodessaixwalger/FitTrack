@@ -1023,10 +1023,6 @@ button:focus-visible,
   }
 }
 
-.card, .stat-card, .progress-card {
-  animation: slideUp 0.4s ease-out;
-}
-
 /* Responsive refinements */
 @media (max-width: 375px) {
   .page-header h1 {
