@@ -145,7 +145,7 @@ function Auth() {
                 fontSize: '14px',
                 fontWeight: '500'
               }}>
-                Nom complet
+                Pseudo
               </label>
               <div style={{ position: 'relative' }}>
                 <User 
@@ -162,7 +162,7 @@ function Auth() {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Jean Dupont"
+                  placeholder="Votre pseudo"
                   style={{
                     width: '100%',
                     padding: '15px 15px 15px 45px',

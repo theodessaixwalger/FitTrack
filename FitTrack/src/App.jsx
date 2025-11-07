@@ -5,12 +5,13 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { getUserProfile } from './services/profileService';
 import MobileOnly from './components/MobileOnly';
 import Layout from './components/Layout';
+import Splash from './pages/Splash';
 import Home from './pages/Home';
 import Nutrition from './pages/Nutrition';
 import Exercise from './pages/Exercise';
 import Profile from './pages/Profile';
 import Auth from './pages/Auth';
-import Onboarding from './pages/Onboarding'; // ✅ Import de la nouvelle page
+import Onboarding from './pages/Onboarding';
 
 // Composant de chargement réutilisable
 function LoadingSpinner() {
@@ -34,7 +35,7 @@ function LoadingSpinner() {
   );
 }
 
-// ✅ Nouveau : Composant pour protéger les routes et gérer l'onboarding
+// ✅ Composant pour protéger les routes et gérer l'onboarding
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -52,7 +53,7 @@ function ProtectedRoute({ children }) {
       }
       setCheckingProfile(false);
     }
-    
+
     if (!loading) {
       checkProfile();
     }
@@ -88,7 +89,7 @@ function PublicRoute({ children }) {
   return user ? <Navigate to="/" /> : children;
 }
 
-// ✅ Nouveau : Route d'onboarding (accessible uniquement si connecté)
+// ✅ Route d'onboarding (accessible uniquement si connecté)
 function OnboardingRoute({ children }) {
   const { user, loading } = useAuth();
 
@@ -105,41 +106,71 @@ function OnboardingRoute({ children }) {
   return children;
 }
 
+// ✅ Nouveau : Composant pour gérer le Splash Screen
+function SplashRoute({ children }) {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    // Vérifier si le splash a déjà été vu dans cette session
+    const splashShown = sessionStorage.getItem('splashShown');
+    
+    if (splashShown) {
+      setShowSplash(false);
+    } else {
+      // Marquer le splash comme vu après 3 secondes
+      const timer = setTimeout(() => {
+        sessionStorage.setItem('splashShown', 'true');
+        setShowSplash(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  if (showSplash) {
+    return <Splash />;
+  }
+
+  return children;
+}
+
 function App() {
   return (
     <MobileOnly>
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* Route publique */}
-            <Route path="/auth" element={
-              <PublicRoute>
-                <Auth />
-              </PublicRoute>
-            } />
+          <SplashRoute>
+            <Routes>
+              {/* Route publique */}
+              <Route path="/auth" element={
+                <PublicRoute>
+                  <Auth />
+                </PublicRoute>
+              } />
 
-            {/* ✅ Route d'onboarding */}
-            <Route path="/onboarding" element={
-              <OnboardingRoute>
-                <Onboarding />
-              </OnboardingRoute>
-            } />
+              {/* ✅ Route d'onboarding */}
+              <Route path="/onboarding" element={
+                <OnboardingRoute>
+                  <Onboarding />
+                </OnboardingRoute>
+              } />
 
-            {/* Routes protégées (nécessitent authentification + profil complété) */}
-            <Route element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }>
-              <Route path="/" element={<Home />} />
-              <Route path="/nutrition" element={<Nutrition />} />
-              <Route path="/exercise" element={<Exercise />} />
-              <Route path="/profile" element={<Profile />} />
-            </Route>
+              {/* Routes protégées (nécessitent authentification + profil complété) */}
+              <Route element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }>
+                <Route path="/" element={<Home />} />
+                <Route path="/nutrition" element={<Nutrition />} />
+                <Route path="/exercise" element={<Exercise />} />
+                <Route path="/profile" element={<Profile />} />
+              </Route>
 
-            {/* Redirection par défaut */}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+              {/* Redirection par défaut */}
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </SplashRoute>
         </AuthProvider>
       </BrowserRouter>
     </MobileOnly>
