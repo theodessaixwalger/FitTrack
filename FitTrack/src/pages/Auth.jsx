@@ -172,7 +172,7 @@ function Auth() {
                     outline: 'none',
                     transition: 'border-color 0.3s'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                  onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                   onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
                 />
               </div>
@@ -215,7 +215,7 @@ function Auth() {
                   outline: 'none',
                   transition: 'border-color 0.3s'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                 onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
               />
             </div>
@@ -257,7 +257,7 @@ function Auth() {
                   outline: 'none',
                   transition: 'border-color 0.3s'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                 onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
               />
               <button
