@@ -19,13 +19,107 @@ function Onboarding() {
     dietary_preference: ''
   })
   const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState({})
+
+  const validateField = (field, value) => {
+    const newErrors = { ...errors }
+
+    switch (field) {
+      case 'height':
+        const height = parseFloat(value)
+        if (value && (height < 100 || height > 250)) {
+          newErrors.height = 'La taille doit être entre 100 et 250 cm'
+        } else {
+          delete newErrors.height
+        }
+        break
+
+      case 'current_weight':
+        const currentWeight = parseFloat(value)
+        if (value && (currentWeight < 20 || currentWeight > 300)) {
+          newErrors.current_weight = 'Le poids doit être entre 30 et 300 kg'
+        } else {
+          delete newErrors.current_weight
+        }
+        break
+
+      case 'target_weight':
+        const targetWeight = parseFloat(value)
+        if (value && (targetWeight < 30 || targetWeight > 300)) {
+          newErrors.target_weight = 'Le poids cible doit être entre 30 et 300 kg'
+        } else {
+          delete newErrors.target_weight
+        }
+        break
+
+      case 'date_of_birth':
+        if (value) {
+          const birthDate = new Date(value)
+          const today = new Date()
+          const age = today.getFullYear() - birthDate.getFullYear()
+          const monthDiff = today.getMonth() - birthDate.getMonth()
+          const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age
+
+          if (actualAge < 13 || actualAge > 120) {
+            newErrors.date_of_birth = 'Vous devez avoir entre 13 et 120 ans'
+          } else {
+            delete newErrors.date_of_birth
+          }
+        }
+        break
+
+      case 'first_name':
+      case 'last_name':
+        if (value && value.length < 2) {
+          newErrors[field] = 'Minimum 2 caractères'
+        } else if (value && value.length > 50) {
+          newErrors[field] = 'Maximum 50 caractères'
+        } else {
+          delete newErrors[field]
+        }
+        break
+
+      default:
+        break
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    validateField(field, value)
+  }
+
+  const canProceedToNextStep = () => {
+    if (step === 1) {
+      return formData.first_name.trim() && 
+             formData.last_name.trim() && 
+             formData.date_of_birth && 
+             formData.gender &&
+             !errors.first_name &&
+             !errors.last_name &&
+             !errors.date_of_birth
+    }
+    if (step === 2) {
+      return formData.height && 
+             formData.current_weight && 
+             formData.target_weight &&
+             !errors.height &&
+             !errors.current_weight &&
+             !errors.target_weight
+    }
+    if (step === 3) {
+      return formData.fitness_goal && formData.activity_level
+    }
+    return true
   }
 
   const nextStep = () => {
-    if (step < 4) setStep(step + 1)
+    if (step < 4 && canProceedToNextStep()) {
+      setStep(step + 1)
+    }
   }
 
   const prevStep = () => {
@@ -33,6 +127,8 @@ function Onboarding() {
   }
 
   const handleSubmit = async () => {
+    if (!canProceedToNextStep()) return
+    
     setLoading(true)
     try {
       await saveUserProfile(formData)
@@ -76,6 +172,7 @@ function Onboarding() {
           onChange={(e) => updateField('first_name', e.target.value)}
           placeholder="Jean"
         />
+        {errors.first_name && <span className="error-message">{errors.first_name}</span>}
       </div>
 
       <div className="form-group">
@@ -87,6 +184,7 @@ function Onboarding() {
           onChange={(e) => updateField('last_name', e.target.value)}
           placeholder="Dupont"
         />
+        {errors.last_name && <span className="error-message">{errors.last_name}</span>}
       </div>
 
       <div className="form-group">
@@ -96,7 +194,9 @@ function Onboarding() {
           className="form-input"
           value={formData.date_of_birth}
           onChange={(e) => updateField('date_of_birth', e.target.value)}
+          max={new Date().toISOString().split('T')[0]}
         />
+        {errors.date_of_birth && <span className="error-message">{errors.date_of_birth}</span>}
       </div>
 
       <div className="form-group">
@@ -159,7 +259,10 @@ function Onboarding() {
           value={formData.height}
           onChange={(e) => updateField('height', e.target.value)}
           placeholder="175"
+          min="50"
+          max="250"
         />
+        {errors.height && <span className="error-message">{errors.height}</span>}
       </div>
 
       <div className="form-group">
@@ -171,7 +274,10 @@ function Onboarding() {
           value={formData.current_weight}
           onChange={(e) => updateField('current_weight', e.target.value)}
           placeholder="70.0"
+          min="20"
+          max="300"
         />
+        {errors.current_weight && <span className="error-message">{errors.current_weight}</span>}
       </div>
 
       <div className="form-group">
@@ -183,7 +289,10 @@ function Onboarding() {
           value={formData.target_weight}
           onChange={(e) => updateField('target_weight', e.target.value)}
           placeholder="65.0"
+          min="20"
+          max="300"
         />
+        {errors.target_weight && <span className="error-message">{errors.target_weight}</span>}
       </div>
     </div>
   )
@@ -317,7 +426,11 @@ function Onboarding() {
             </button>
           )}
           {step < 4 ? (
-            <button className="btn btn-primary" onClick={nextStep}>
+            <button 
+              className="btn btn-primary" 
+              onClick={nextStep}
+              disabled={!canProceedToNextStep()}
+            >
               Continuer →
             </button>
           ) : (
