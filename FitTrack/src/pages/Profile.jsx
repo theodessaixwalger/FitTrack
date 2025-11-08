@@ -22,13 +22,14 @@ function Profile() {
       const data = await getUserProfile();
       setProfile(data);
       setEditData({
-        first_name: data.first_name || '',
-        last_name: data.last_name || '',
-        height: data.height || '',
-        current_weight: data.current_weight || '',
-        target_weight: data.target_weight || '',
-        fitness_goal: data.fitness_goal || '',
-        activity_level: data.activity_level || ''
+        first_name: data?.first_name || '',
+        last_name: data?.last_name || '',
+        date_of_birth: data?.date_of_birth || '',
+        height: data?.height || '',
+        current_weight: data?.current_weight || '',
+        target_weight: data?.target_weight || '',
+        fitness_goal: data?.fitness_goal || '',
+        activity_level: data?.activity_level || ''
       });
     } catch (error) {
       console.error('Erreur chargement profil:', error);
@@ -52,6 +53,7 @@ function Profile() {
       setEditData({
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
+        date_of_birth: profile.date_of_birth || '',
         height: profile.height || '',
         current_weight: profile.current_weight || '',
         target_weight: profile.target_weight || '',
@@ -83,26 +85,41 @@ function Profile() {
     }
   };
 
-  const fullName = profile ? `${profile.first_name} ${profile.last_name}` : 'Utilisateur';
+  const fullName = profile 
+    ? `${profile.first_name} ${profile.last_name}` 
+    : user?.user_metadata?.full_name || 'Utilisateur';
   const email = user?.email || '';
   const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase();
 
-  // Calcul de la progression
+  // Calculer les statistiques
   const currentWeight = profile?.current_weight || 0;
   const targetWeight = profile?.target_weight || 0;
-  const startWeight = 60; // Tu peux stocker ça aussi dans le profil
-  const progress = targetWeight > startWeight 
-    ? ((currentWeight - startWeight) / (targetWeight - startWeight)) * 100
-    : ((startWeight - currentWeight) / (startWeight - targetWeight)) * 100;
-  const remainingWeight = Math.abs(targetWeight - currentWeight).toFixed(1);
+  const weightDiff = currentWeight - targetWeight;
+  const progressPercent = targetWeight > 0 
+    ? Math.min(100, Math.max(0, ((currentWeight - targetWeight) / targetWeight) * 100))
+    : 0;
 
-  // Traduction des objectifs
-  const goalLabels = {
-    lose_weight: 'Perte de poids',
-    gain_muscle: 'Prise de masse',
-    maintain: 'Maintien',
-    get_fit: 'Remise en forme'
+  // Mapper les objectifs
+  const fitnessGoalLabels = {
+    'lose_weight': 'Perte de poids',
+    'gain_muscle': 'Prise de masse',
+    'maintain': 'Maintien',
+    'get_fit': 'Remise en forme'
   };
+
+  const goalLabel = profile?.fitness_goal 
+    ? fitnessGoalLabels[profile.fitness_goal] 
+    : 'Non défini';
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div className="loading-spinner"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -136,16 +153,15 @@ function Profile() {
             onClick={handleOpenModal}
             style={{
               background: 'rgba(255,255,255,0.2)',
-              border: '2px solid rgba(255,255,255,0.3)',
-              color: 'white',
-              padding: '10px',
+              border: 'none',
               borderRadius: '12px',
+              padding: '12px',
+              color: 'white',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s',
-              backdropFilter: 'blur(10px)'
+              transition: 'all 0.2s'
             }}
             onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
             onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
@@ -165,16 +181,28 @@ function Profile() {
           backdropFilter: 'blur(10px)'
         }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>{profile?.height || '-'}</div>
-            <div style={{ fontSize: '12px', opacity: '0.9', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Taille (cm)</div>
+            <div style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>
+              {profile?.height || '-'}
+            </div>
+            <div style={{ fontSize: '12px', opacity: '0.9', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Taille (cm)
+            </div>
           </div>
           <div style={{ textAlign: 'center', borderLeft: '1px solid rgba(255,255,255,0.2)', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
-            <div style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>{currentWeight || '-'}</div>
-            <div style={{ fontSize: '12px', opacity: '0.9', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Poids (kg)</div>
+            <div style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>
+              {profile?.current_weight || '-'}
+            </div>
+            <div style={{ fontSize: '12px', opacity: '0.9', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Poids (kg)
+            </div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>{targetWeight || '-'}</div>
-            <div style={{ fontSize: '12px', opacity: '0.9', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Objectif</div>
+            <div style={{ fontSize: '24px', fontWeight: '800', marginBottom: '4px' }}>
+              {profile?.target_weight || '-'}
+            </div>
+            <div style={{ fontSize: '12px', opacity: '0.9', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Objectif (kg)
+            </div>
           </div>
         </div>
       </div>
@@ -232,10 +260,10 @@ function Profile() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <h3 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '4px' }}>
-                      {goalLabels[profile.fitness_goal] || profile.fitness_goal}
+                      {goalLabel}
                     </h3>
                     <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>
-                      Objectif : {targetWeight}kg
+                      Objectif : {targetWeight} kg
                     </p>
                   </div>
                 </div>
@@ -246,7 +274,9 @@ function Profile() {
                     <span style={{ color: 'var(--primary)' }}>{currentWeight} kg</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${Math.min(progress, 100)}%` }}></div>
+                    <div className="progress-fill" style={{ 
+                      width: `${Math.abs(progressPercent)}%` 
+                    }}></div>
                   </div>
                 </div>
 
@@ -261,7 +291,12 @@ function Profile() {
                   color: 'var(--text-secondary)'
                 }}>
                   <span>🎯</span>
-                  <span>Plus que {remainingWeight} kg pour atteindre votre objectif !</span>
+                  <span>
+                    {profile.fitness_goal === 'gain_muscle' 
+                      ? `Plus que ${Math.abs(weightDiff).toFixed(1)} kg pour atteindre votre objectif !`
+                      : `Plus que ${Math.abs(weightDiff).toFixed(1)} kg à perdre !`
+                    }
+                  </span>
                 </div>
               </div>
             </div>
@@ -378,13 +413,13 @@ function Profile() {
         </div>
       </div>
 
-      {/* Modal d'édition */}
+      {/* Modal de modification */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="edit-modal" onClick={(e) => e.stopPropagation()}>
             <div className="edit-modal-header">
               <h2>Modifier mon profil</h2>
-              <button onClick={handleCloseModal} className="close-btn">
+              <button className="close-btn" onClick={handleCloseModal}>
                 <X size={24} />
               </button>
             </div>
@@ -398,7 +433,6 @@ function Profile() {
                   value={editData.first_name}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Votre prénom"
                 />
               </div>
 
@@ -410,7 +444,17 @@ function Profile() {
                   value={editData.last_name}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Votre nom"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Date de naissance</label>
+                <input
+                  type="date"
+                  name="date_of_birth"
+                  value={editData.date_of_birth}
+                  onChange={handleChange}
+                  className="form-input"
                 />
               </div>
 
@@ -422,7 +466,6 @@ function Profile() {
                   value={editData.height}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="170"
                 />
               </div>
 
@@ -434,26 +477,24 @@ function Profile() {
                   value={editData.current_weight}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="70"
                   step="0.1"
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Poids cible (kg)</label>
+                <label className="form-label">Poids objectif (kg)</label>
                 <input
                   type="number"
                   name="target_weight"
                   value={editData.target_weight}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="75"
                   step="0.1"
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Objectif</label>
+                <label className="form-label">Objectif fitness</label>
                 <select
                   name="fitness_goal"
                   value={editData.fitness_goal}

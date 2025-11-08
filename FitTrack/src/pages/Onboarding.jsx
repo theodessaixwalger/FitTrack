@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createUserProfile } from '../services/profileService'
+import { saveUserProfile } from '../services/profileService'
 import '../index.css'
 
 function Onboarding() {
@@ -35,7 +35,7 @@ function Onboarding() {
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      await createUserProfile(profileData)
+      await saveUserProfile(formData)
       navigate('/')
     } catch (error) {
       alert('Erreur lors de la sauvegarde du profil')

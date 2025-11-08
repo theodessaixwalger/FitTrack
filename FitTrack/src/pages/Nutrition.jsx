@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import AddFoodModal from '../components/AddFoodModal'
-import { getMealsByDate, createMeal, addFoodToMeal, removeFoodFromMeal } from '../services/mealService'
+import { createMeal, addFoodToMeal, removeFoodFromMeal } from '../services/mealService'
 import { useNutrition } from '../context/NutritionContext'
+import { useAuth } from '../context/AuthContext'
 
 function Nutrition() {
-  const { 
-    meals: contextMeals,
-    dailyNutrition, 
-    loading: contextLoading,
+  const { user } = useAuth()
+  const {
+    meals,
+    dailyNutrition,
+    loading,
     calorieGoal,
     proteinGoal,
     carbsGoal,
@@ -18,28 +20,26 @@ function Nutrition() {
     getRemainingCalories
   } = useNutrition()
 
-  const [meals, setMeals] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState(null)
   const [deletingItem, setDeletingItem] = useState(null)
 
-  const userId = 'user-demo'
   const today = new Date().toISOString().split('T')[0]
-
-  useEffect(() => {
-    setMeals(contextMeals)
-  }, [contextMeals])
 
   const handleAddFood = async (food) => {
     try {
+      // Trouver ou créer le repas
       let meal = meals.find(m => m.meal_type === selectedMealType)
-      
+
       if (!meal) {
-        meal = await createMeal(userId, selectedMealType, today)
+        meal = await createMeal(user.id, selectedMealType, today)
       }
 
+      // Ajouter l'aliment au repas
       await addFoodToMeal(meal.id, food.id, food.serving_size)
-      await refreshNutrition() // Rafraîchir le contexte
+
+      // Rafraîchir les données
+      await refreshNutrition()
     } catch (error) {
       console.error('Erreur ajout aliment:', error)
     }
@@ -49,7 +49,7 @@ function Nutrition() {
     try {
       setDeletingItem(mealFoodId)
       await removeFoodFromMeal(mealFoodId)
-      await refreshNutrition() // Rafraîchir le contexte
+      await refreshNutrition()
     } catch (error) {
       console.error('Erreur suppression aliment:', error)
     } finally {
@@ -125,7 +125,7 @@ function Nutrition() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -207,7 +207,7 @@ function Nutrition() {
     )
   }
 
-  if (contextLoading) {
+  if (loading) {
     return (
       <div className="page">
         <div style={{ 
@@ -263,7 +263,7 @@ function Nutrition() {
               opacity: '0.9',
               fontWeight: '600'
             }}>
-              {dailyNutrition.calories < calorieGoal 
+              {getRemainingCalories() > 0
                 ? `Plus que ${Math.round(getRemainingCalories())} kcal pour atteindre votre objectif 🎯`
                 : `Objectif atteint ! 🎉`
               }
