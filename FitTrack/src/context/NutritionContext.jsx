@@ -1,7 +1,7 @@
 // src/context/NutritionContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react'
 import { getMealsByDate, calculateDailyNutrition } from '../services/mealService'
-import { getUserProfile } from '../services/profileService'
+import { getUserProfile, updateUserProfile } from '../services/profileService'
 import { useAuth } from './AuthContext'
 
 const NutritionContext = createContext()
@@ -15,8 +15,8 @@ export function useNutrition() {
 }
 
 export function NutritionProvider({ children }) {
-  const { user } = useAuth() // ✅ Récupérer l'utilisateur connecté
-  
+  const { user } = useAuth()
+
   const [meals, setMeals] = useState([])
   const [dailyNutrition, setDailyNutrition] = useState({
     calories: 0,
@@ -24,21 +24,19 @@ export function NutritionProvider({ children }) {
     carbs: 0,
     fats: 0
   })
-  
-  // ✅ Objectifs depuis le profil utilisateur
+
   const [nutritionGoals, setNutritionGoals] = useState({
     calorieGoal: 2700,
     proteinGoal: 120,
     carbsGoal: 400,
     fatsGoal: 70
   })
-  
+
   const [loading, setLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(Date.now())
 
   const today = new Date().toISOString().split('T')[0]
 
-  // ✅ Charger le profil utilisateur au démarrage
   useEffect(() => {
     async function loadUserProfile() {
       if (user) {
@@ -57,11 +55,10 @@ export function NutritionProvider({ children }) {
         }
       }
     }
-    
+
     loadUserProfile()
   }, [user])
 
-  // ✅ Charger les repas du jour
   useEffect(() => {
     if (user) {
       loadMeals()
@@ -73,7 +70,7 @@ export function NutritionProvider({ children }) {
 
     try {
       setLoading(true)
-      const data = await getMealsByDate(user.id, today) // ✅ Utiliser user.id
+      const data = await getMealsByDate(user.id, today)
       setMeals(data)
       const nutrition = calculateDailyNutrition(data)
       setDailyNutrition(nutrition)
@@ -89,6 +86,23 @@ export function NutritionProvider({ children }) {
     await loadMeals()
   }
 
+  // ✅ Nouvelle fonction pour mettre à jour les objectifs
+  const updateNutritionGoals = async (newGoals) => {
+    try {
+      await updateUserProfile({
+        daily_calorie_goal: newGoals.calorieGoal,
+        daily_protein_goal: newGoals.proteinGoal,
+        daily_carbs_goal: newGoals.carbsGoal,
+        daily_fats_goal: newGoals.fatsGoal
+      })
+      
+      setNutritionGoals(newGoals)
+    } catch (error) {
+      console.error('Erreur mise à jour objectifs:', error)
+      throw error
+    }
+  }
+
   const calculateProgress = () => {
     return Math.min((dailyNutrition.calories / nutritionGoals.calorieGoal) * 100, 100)
   }
@@ -101,12 +115,13 @@ export function NutritionProvider({ children }) {
     meals,
     dailyNutrition,
     loading,
-    calorieGoal: nutritionGoals.calorieGoal,      // ✅ Depuis le profil
-    proteinGoal: nutritionGoals.proteinGoal,      // ✅ Depuis le profil
-    carbsGoal: nutritionGoals.carbsGoal,          // ✅ Depuis le profil
-    fatsGoal: nutritionGoals.fatsGoal,            // ✅ Depuis le profil
+    calorieGoal: nutritionGoals.calorieGoal,
+    proteinGoal: nutritionGoals.proteinGoal,
+    carbsGoal: nutritionGoals.carbsGoal,
+    fatsGoal: nutritionGoals.fatsGoal,
     lastUpdate,
     refreshNutrition,
+    updateNutritionGoals,  // ✅ Ajout de la nouvelle fonction
     calculateProgress,
     getRemainingCalories
   }

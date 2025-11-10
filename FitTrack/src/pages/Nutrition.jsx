@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Settings } from 'lucide-react'
 import AddFoodModal from '../components/AddFoodModal'
+import EditMacrosModal from '../components/EditMacrosModal'
 import { createMeal, addFoodToMeal, removeFoodFromMeal } from '../services/mealService'
 import { useNutrition } from '../context/NutritionContext'
 import { useAuth } from '../context/AuthContext'
@@ -17,10 +18,12 @@ function Nutrition() {
     fatsGoal,
     refreshNutrition,
     calculateProgress,
-    getRemainingCalories
+    getRemainingCalories,
+    updateNutritionGoals
   } = useNutrition()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isMacrosModalOpen, setIsMacrosModalOpen] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState(null)
   const [deletingItem, setDeletingItem] = useState(null)
 
@@ -28,17 +31,13 @@ function Nutrition() {
 
   const handleAddFood = async (food) => {
     try {
-      // Trouver ou créer le repas
       let meal = meals.find(m => m.meal_type === selectedMealType)
 
       if (!meal) {
         meal = await createMeal(user.id, selectedMealType, today)
       }
 
-      // Ajouter l'aliment au repas
       await addFoodToMeal(meal.id, food.id, food.serving_size)
-
-      // Rafraîchir les données
       await refreshNutrition()
     } catch (error) {
       console.error('Erreur ajout aliment:', error)
@@ -55,6 +54,10 @@ function Nutrition() {
     } finally {
       setDeletingItem(null)
     }
+  }
+
+  const handleUpdateMacros = async (newGoals) => {
+    await updateNutritionGoals(newGoals)
   }
 
   const openModalForMeal = (mealType) => {
@@ -271,9 +274,39 @@ function Nutrition() {
           </div>
         </div>
 
-        {/* Macros */}
+        {/* Macros avec bouton de modification */}
         <div className="section">
-          <h2 className="section-title">Macronutriments</h2>
+          <div className="section-header">
+            <h2 className="section-title">Macronutriments</h2>
+            <button 
+              onClick={() => setIsMacrosModalOpen(true)}
+              style={{
+                background: 'var(--surface)',
+                color: 'var(--text-primary)',
+                border: '2px solid var(--border-light)',
+                borderRadius: '12px',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.borderColor = 'var(--primary)'
+                e.currentTarget.style.color = 'var(--primary)'
+                e.currentTarget.style.transform = 'scale(1.05)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-light)'
+                e.currentTarget.style.color = 'var(--text-primary)'
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+            >
+              <Settings size={18} />
+            </button>
+          </div>
           <div className="macros-grid">
             <div className="macro-item">
               <div className="macro-circle" style={{ background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)' }}>
@@ -316,6 +349,18 @@ function Nutrition() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAddFood={handleAddFood}
+      />
+
+      <EditMacrosModal
+        isOpen={isMacrosModalOpen}
+        onClose={() => setIsMacrosModalOpen(false)}
+        currentGoals={{
+          calorieGoal,
+          proteinGoal,
+          carbsGoal,
+          fatsGoal
+        }}
+        onSave={handleUpdateMacros}
       />
     </div>
   )
