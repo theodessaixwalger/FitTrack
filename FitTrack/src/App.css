@@ -1692,3 +1692,24 @@ a:focus-visible {
     opacity: 1;
   }
 }
+
+.btn-weight {
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.btn-weight-primary {
+  background: linear-gradient(135deg, #FF6B35, #F7931E);
+  color: white;
+  flex: 1;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
