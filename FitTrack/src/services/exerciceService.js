@@ -83,3 +83,159 @@ export async function updateDay(dayId, name, dayOfWeek) {
     .single()
   return data
 }
+
+// ========== BIBLIOTHÈQUE D'EXERCICES ==========
+
+// Récupérer tous les exercices de l'utilisateur
+export async function getAllExercises(userId) {
+  const { data, error } = await supabase
+    .from('exercises')
+    .select('*')
+    .eq('user_id', userId)
+    .order('name')
+  
+  if (error) {
+    console.error('Erreur lors de la récupération des exercices:', error)
+    return []
+  }
+  
+  return data || []
+}
+
+// Créer un nouvel exercice personnalisé
+export async function createExercise(userId, exerciseData) {
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert({
+      user_id: userId,
+      name: exerciseData.name,
+      muscle_group: exerciseData.muscle_group,
+      equipment: exerciseData.equipment || null,
+      description: exerciseData.description || null
+    })
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Erreur lors de la création de l\'exercice:', error)
+    throw error
+  }
+  
+  return data
+}
+
+// Mettre à jour un exercice existant
+export async function updateExercise(exerciseId, exerciseData) {
+  const { data, error } = await supabase
+    .from('exercises')
+    .update({
+      name: exerciseData.name,
+      muscle_group: exerciseData.muscle_group,
+      equipment: exerciseData.equipment || null,
+      description: exerciseData.description || null,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', exerciseId)
+    .select()
+    .single()
+  
+  if (error) {
+    console.error('Erreur lors de la mise à jour de l\'exercice:', error)
+    throw error
+  }
+  
+  return data
+}
+
+// Supprimer un exercice personnalisé
+export async function deleteCustomExercise(exerciseId) {
+  const { error } = await supabase
+    .from('exercises')
+    .delete()
+    .eq('id', exerciseId)
+  
+  if (error) {
+    console.error('Erreur lors de la suppression de l\'exercice:', error)
+    throw error
+  }
+}
+
+// Obtenir l'icône du groupe musculaire
+export function getMuscleGroupIcon(muscleGroup) {
+  const icons = {
+    'Pectoraux': '💪',
+    'Dos': '🦾',
+    'Jambes': '🦵',
+    'Épaules': '🏋️',
+    'Biceps': '💪',
+    'Triceps': '💪',
+    'Abdominaux': '🔥',
+    'Cardio': '❤️',
+    'Fessiers': '🍑',
+    'Mollets': '🦵',
+    'Avant-bras': '✊',
+    'Trapèzes': '🦾'
+  }
+  
+  return icons[muscleGroup] || '💪'
+}
+
+// Initialiser des exercices par défaut pour un nouvel utilisateur
+export async function initializeDefaultExercises(userId) {
+  const defaultExercises = [
+    // Pectoraux
+    { name: 'Développé couché', muscle_group: 'Pectoraux', equipment: 'Barre' },
+    { name: 'Développé incliné', muscle_group: 'Pectoraux', equipment: 'Haltères' },
+    { name: 'Écarté couché', muscle_group: 'Pectoraux', equipment: 'Haltères' },
+    { name: 'Pompes', muscle_group: 'Pectoraux', equipment: 'Poids du corps' },
+    
+    // Dos
+    { name: 'Tractions', muscle_group: 'Dos', equipment: 'Barre de traction' },
+    { name: 'Rowing barre', muscle_group: 'Dos', equipment: 'Barre' },
+    { name: 'Tirage vertical', muscle_group: 'Dos', equipment: 'Machine' },
+    { name: 'Rowing haltère', muscle_group: 'Dos', equipment: 'Haltères' },
+    
+    // Jambes
+    { name: 'Squat', muscle_group: 'Jambes', equipment: 'Barre' },
+    { name: 'Presse à cuisses', muscle_group: 'Jambes', equipment: 'Machine' },
+    { name: 'Fentes', muscle_group: 'Jambes', equipment: 'Haltères' },
+    { name: 'Leg curl', muscle_group: 'Jambes', equipment: 'Machine' },
+    
+    // Épaules
+    { name: 'Développé militaire', muscle_group: 'Épaules', equipment: 'Barre' },
+    { name: 'Élévations latérales', muscle_group: 'Épaules', equipment: 'Haltères' },
+    { name: 'Oiseau', muscle_group: 'Épaules', equipment: 'Haltères' },
+    
+    // Biceps
+    { name: 'Curl barre', muscle_group: 'Biceps', equipment: 'Barre' },
+    { name: 'Curl haltères', muscle_group: 'Biceps', equipment: 'Haltères' },
+    { name: 'Curl marteau', muscle_group: 'Biceps', equipment: 'Haltères' },
+    
+    // Triceps
+    { name: 'Dips', muscle_group: 'Triceps', equipment: 'Barres parallèles' },
+    { name: 'Extension triceps', muscle_group: 'Triceps', equipment: 'Haltères' },
+    { name: 'Barre au front', muscle_group: 'Triceps', equipment: 'Barre' },
+    
+    // Abdominaux
+    { name: 'Crunch', muscle_group: 'Abdominaux', equipment: 'Poids du corps' },
+    { name: 'Planche', muscle_group: 'Abdominaux', equipment: 'Poids du corps' },
+    { name: 'Relevé de jambes', muscle_group: 'Abdominaux', equipment: 'Poids du corps' }
+  ]
+
+  const exercisesToInsert = defaultExercises.map(ex => ({
+    user_id: userId,
+    ...ex
+  }))
+
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert(exercisesToInsert)
+    .select()
+
+  if (error) {
+    console.error('Erreur lors de l\'initialisation des exercices par défaut:', error)
+    throw error
+  }
+
+  return data
+}

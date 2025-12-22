@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { X, Plus, Search } from 'lucide-react'
-import { getAllExercises, getMuscleGroupIcon } from '../services/exerciceService'
+import { getAllExercises, getMuscleGroupIcon, createExercise } from '../services/exerciceService'
 
-function AddExerciseModal({ isOpen, onClose, onAddExercise }) {
+function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
   const [exercises, setExercises] = useState([])
   const [filteredExercises, setFilteredExercises] = useState([])
   const [selectedExercise, setSelectedExercise] = useState(null)
@@ -14,14 +14,23 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise }) {
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  
+  // États pour créer un nouvel exercice
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newExercise, setNewExercise] = useState({
+    name: '',
+    muscle_group: 'Pectoraux',
+    equipment: '',
+    description: ''
+  })
 
   const muscleGroups = ['all', 'Pectoraux', 'Dos', 'Jambes', 'Épaules', 'Biceps', 'Triceps', 'Abdominaux']
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && userId) {
       loadExercises()
     }
-  }, [isOpen])
+  }, [isOpen, userId])
 
   useEffect(() => {
     filterExercises()
@@ -30,7 +39,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise }) {
   const loadExercises = async () => {
     try {
       setLoading(true)
-      const data = await getAllExercises()
+      const data = await getAllExercises(userId)
       setExercises(data)
     } catch (error) {
       console.error('Erreur chargement exercices:', error)
@@ -71,6 +80,33 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise }) {
     }
   }
 
+  const handleCreateExercise = async (e) => {
+    e.preventDefault()
+    if (!newExercise.name.trim()) return
+
+    setIsSubmitting(true)
+    try {
+      const createdExercise = await createExercise(userId, newExercise)
+      // Ajouter le nouvel exercice à la liste
+      setExercises([...exercises, createdExercise])
+      // Sélectionner automatiquement le nouvel exercice
+      setSelectedExercise(createdExercise)
+      setShowCreateForm(false)
+      // Réinitialiser le formulaire de création
+      setNewExercise({
+        name: '',
+        muscle_group: 'Pectoraux',
+        equipment: '',
+        description: ''
+      })
+    } catch (error) {
+      console.error('Erreur création exercice:', error)
+      alert('Erreur lors de la création de l\'exercice')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const resetForm = () => {
     setSelectedExercise(null)
     setSearchTerm('')
@@ -79,6 +115,13 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise }) {
     setReps('10-12')
     setRestSeconds(60)
     setNotes('')
+    setShowCreateForm(false)
+    setNewExercise({
+      name: '',
+      muscle_group: 'Pectoraux',
+      equipment: '',
+      description: ''
+    })
   }
 
   if (!isOpen) return null
@@ -93,10 +136,119 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            {!selectedExercise ? (
-              <>
+        <div className="modal-body">
+          {showCreateForm ? (
+            <>
+              {/* Formulaire de création d'exercice */}
+              <div style={{
+                padding: '16px',
+                borderRadius: '12px',
+                background: 'var(--surface-elevated)',
+                marginBottom: '24px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '16px'
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    margin: 0
+                  }}>Nouvel exercice</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateForm(false)}
+                    style={{
+                      padding: '8px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: 'var(--surface)',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateExercise}>
+                  <div className="form-group">
+                    <label>Nom de l'exercice *</label>
+                    <input
+                      type="text"
+                      value={newExercise.name}
+                      onChange={(e) => setNewExercise({...newExercise, name: e.target.value})}
+                      placeholder="Ex: Développé couché"
+                      className="input"
+                      required
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Groupe musculaire *</label>
+                    <select
+                      value={newExercise.muscle_group}
+                      onChange={(e) => setNewExercise({...newExercise, muscle_group: e.target.value})}
+                      className="input"
+                      required
+                    >
+                      {muscleGroups.filter(g => g !== 'all').map((group) => (
+                        <option key={group} value={group}>
+                          {getMuscleGroupIcon(group)} {group}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Équipement</label>
+                    <input
+                      type="text"
+                      value={newExercise.equipment}
+                      onChange={(e) => setNewExercise({...newExercise, equipment: e.target.value})}
+                      placeholder="Ex: Barre, Haltères, Poids du corps..."
+                      className="input"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Description</label>
+                    <textarea
+                      value={newExercise.description}
+                      onChange={(e) => setNewExercise({...newExercise, description: e.target.value})}
+                      placeholder="Instructions d'exécution..."
+                      className="input"
+                      rows="3"
+                      style={{ resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn"
+                    disabled={isSubmitting || !newExercise.name.trim()}
+                    style={{ width: '100%' }}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="spinner" />
+                        Création...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={20} />
+                        Créer et utiliser cet exercice
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            </>
+          ) : !selectedExercise ? (
+            <>
                 {/* Recherche */}
                 <div className="form-group">
                   <div className="search-input">
@@ -146,11 +298,43 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise }) {
                   </div>
                 </div>
 
+                {/* Bouton créer un exercice */}
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(true)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '12px',
+                    border: '2px dashed var(--primary)',
+                    background: 'transparent',
+                    color: 'var(--primary)',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    marginTop: '16px',
+                    marginBottom: '16px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'transparent'
+                  }}
+                >
+                  <Plus size={20} />
+                  Créer un nouvel exercice
+                </button>
+
                 {/* Liste des exercices */}
                 <div style={{
                   maxHeight: '400px',
-                  overflowY: 'auto',
-                  marginTop: '16px'
+                  overflowY: 'auto'
                 }}>
                   {loading ? (
                     <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -229,147 +413,146 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise }) {
             ) : (
               <>
                 {/* Exercice sélectionné */}
-                <div style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  background: 'var(--surface-elevated)',
-                  marginBottom: '24px'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <div>
-                      <div style={{
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        marginBottom: '8px'
-                      }}>
-                        {selectedExercise.name}
-                      </div>
-                      <div style={{
-                        fontSize: '14px',
-                        color: 'var(--text-secondary)'
-                      }}>
-                        {getMuscleGroupIcon(selectedExercise.muscle_group)} {selectedExercise.muscle_group}
-                        {selectedExercise.equipment && ` • ${selectedExercise.equipment}`}
-                      </div>
-                      {selectedExercise.description && (
+                <form onSubmit={handleSubmit}>
+                  <div style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    background: 'var(--surface-elevated)',
+                    marginBottom: '24px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                      <div>
                         <div style={{
-                          marginTop: '8px',
-                          fontSize: '13px',
-                          color: 'var(--text-secondary)',
-                          lineHeight: '1.5'
+                          fontSize: '18px',
+                          fontWeight: '700',
+                          marginBottom: '8px'
                         }}>
-                          {selectedExercise.description}
+                          {selectedExercise.name}
                         </div>
-                      )}
+                        <div style={{
+                          fontSize: '14px',
+                          color: 'var(--text-secondary)'
+                        }}>
+                          {getMuscleGroupIcon(selectedExercise.muscle_group)} {selectedExercise.muscle_group}
+                          {selectedExercise.equipment && ` • ${selectedExercise.equipment}`}
+                        </div>
+                        {selectedExercise.description && (
+                          <div style={{
+                            marginTop: '8px',
+                            fontSize: '13px',
+                            color: 'var(--text-secondary)',
+                            lineHeight: '1.5'
+                          }}>
+                            {selectedExercise.description}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedExercise(null)}
+                        style={{
+                          padding: '8px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: 'var(--surface)',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <X size={20} />
+                      </button>
                     </div>
+                  </div>
+
+                  {/* Configuration */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '16px',
+                    marginBottom: '16px'
+                  }}>
+                    <div className="form-group">
+                      <label>Séries</label>
+                      <input
+                        type="number"
+                        value={sets}
+                        onChange={(e) => setSets(Number(e.target.value))}
+                        min="1"
+                        max="10"
+                        className="input"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Répétitions</label>
+                      <input
+                        type="text"
+                        value={reps}
+                        onChange={(e) => setReps(e.target.value)}
+                        placeholder="10-12"
+                        className="input"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Repos (sec)</label>
+                      <input
+                        type="number"
+                        value={restSeconds}
+                        onChange={(e) => setRestSeconds(Number(e.target.value))}
+                        min="0"
+                        step="15"
+                        className="input"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Notes (optionnel)</label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Conseils d'exécution, progression..."
+                      className="input"
+                      rows="3"
+                      style={{ resize: 'vertical' }}
+                    />
+                  </div>
+
+                  <div className="modal-footer">
                     <button
                       type="button"
-                      onClick={() => setSelectedExercise(null)}
-                      style={{
-                        padding: '8px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: 'var(--surface)',
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer'
-                      }}
+                      onClick={onClose}
+                      className="btn btn-outline"
+                      disabled={isSubmitting}
                     >
-                      <X size={20} />
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="spinner" />
+                          Ajout...
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={20} />
+                          Ajouter l'exercice
+                        </>
+                      )}
                     </button>
                   </div>
-                </div>
-
-                {/* Configuration */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '16px',
-                  marginBottom: '16px'
-                }}>
-                  <div className="form-group">
-                    <label>Séries</label>
-                    <input
-                      type="number"
-                      value={sets}
-                      onChange={(e) => setSets(Number(e.target.value))}
-                      min="1"
-                      max="10"
-                      className="input"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Répétitions</label>
-                    <input
-                      type="text"
-                      value={reps}
-                      onChange={(e) => setReps(e.target.value)}
-                      placeholder="10-12"
-                      className="input"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Repos (sec)</label>
-                    <input
-                      type="number"
-                      value={restSeconds}
-                      onChange={(e) => setRestSeconds(Number(e.target.value))}
-                      min="0"
-                      step="15"
-                      className="input"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Notes (optionnel)</label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Conseils d'exécution, progression..."
-                    className="input"
-                    rows="3"
-                    style={{ resize: 'vertical' }}
-                  />
-                </div>
+                </form>
               </>
             )}
           </div>
-
-          <div className="modal-footer">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-outline"
-              disabled={isSubmitting}
-            >
-              Annuler
-            </button>
-            {selectedExercise && (
-              <button
-                type="submit"
-                className="btn"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="spinner" />
-                    Ajout...
-                  </>
-                ) : (
-                  <>
-                    <Plus size={20} />
-                    Ajouter l'exercice
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </form>
       </div>
     </div>
   )

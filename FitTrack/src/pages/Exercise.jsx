@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Dumbbell, ChevronDown, ChevronUp } from "lucide-react";
+import { supabase } from "../config/supabase";
 import {
   getActiveProgram,
   createProgram,
@@ -8,8 +9,10 @@ import {
   addExercise,
   deleteExercise,
   deleteDay,
-  updateDay
+  updateDay,
+  getAllExercises
 } from "../services/exerciceService";
+import AddExerciseModal from "../components/AddExerciseModal";
 
 const DAYS = [
   "Dimanche",
@@ -22,7 +25,7 @@ const DAYS = [
 ];
 
 function Training() {
-  const userId = "user123";
+  const [userId, setUserId] = useState(null);
   const [program, setProgram] = useState(null);
   const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,8 +52,23 @@ function Training() {
   const [deletingDay, setDeletingDay] = useState(null);
 
   useEffect(() => {
-    loadData();
+    loadUser();
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      loadData();
+    }
+  }, [userId]);
+
+  async function loadUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUserId(user.id);
+    } else {
+      setLoading(false);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
@@ -80,15 +98,17 @@ function Training() {
     loadData();
   }
 
-  async function handleAddExercise(e) {
-    e.preventDefault();
-    await addExercise(selectedDayId, exerciseName, sets, reps);
-    setExerciseName("");
-    setSets(3);
-    setReps("10-12");
-    setShowNewExercise(false);
-    setSelectedDayId(null);
-    loadData();
+  async function handleAddExercise(exerciseId, sets, reps, restSeconds, notes) {
+    // Récupérer le nom de l'exercice depuis la bibliothèque
+    const exercises = await getAllExercises(userId);
+    const exercise = exercises.find(ex => ex.id === exerciseId);
+    
+    if (exercise) {
+      await addExercise(selectedDayId, exercise.name, sets, reps);
+      setShowNewExercise(false);
+      setSelectedDayId(null);
+      loadData();
+    }
   }
 
   async function handleDeleteExercise(exerciseId) {
@@ -768,102 +788,12 @@ function Training() {
       )}
 
       {/* Modal Nouvel Exercice */}
-      {showNewExercise && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowNewExercise(false)}
-        >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginBottom: "20px" }}>Nouvel exercice</h2>
-            <form onSubmit={handleAddExercise}>
-              <div style={{ marginBottom: "16px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "var(--text-primary)",
-                    fontSize: "14px",
-                  }}
-                >
-                  Nom de l'exercice
-                </label>
-                <input
-                  type="text"
-                  placeholder="ex: Développé couché"
-                  value={exerciseName}
-                  onChange={(e) => setExerciseName(e.target.value)}
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "12px",
-                  marginBottom: "20px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "8px",
-                      fontSize: "13px",
-                      fontWeight: "600",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    Séries
-                  </label>
-                  <input
-                    type="number"
-                    value={sets}
-                    onChange={(e) => setSets(Number(e.target.value))}
-                    min="1"
-                    max="10"
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "8px",
-                      fontSize: "13px",
-                      fontWeight: "600",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    Répétitions
-                  </label>
-                  <input
-                    type="text"
-                    value={reps}
-                    onChange={(e) => setReps(e.target.value)}
-                    placeholder="8-12"
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "12px" }}>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => setShowNewExercise(false)}
-                  style={{ flex: 1 }}
-                >
-                  Annuler
-                </button>
-                <button type="submit" className="btn" style={{ flex: 1 }}>
-                  Ajouter
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddExerciseModal
+        isOpen={showNewExercise}
+        onClose={() => setShowNewExercise(false)}
+        onAddExercise={handleAddExercise}
+        userId={userId}
+      />
     </div>
   );
 }
