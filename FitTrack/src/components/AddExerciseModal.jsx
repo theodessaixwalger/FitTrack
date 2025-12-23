@@ -12,6 +12,8 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
   const [reps, setReps] = useState('10-12')
   const [restSeconds, setRestSeconds] = useState(60)
   const [notes, setNotes] = useState('')
+  const [weight, setWeight] = useState('')
+  const [weightUnit, setWeightUnit] = useState('kg')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   
@@ -70,7 +72,8 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
 
     setIsSubmitting(true)
     try {
-      await onAddExercise(selectedExercise.id, sets, reps, restSeconds, notes)
+      const weightValue = weight ? parseFloat(weight) : null
+      await onAddExercise(selectedExercise.id, sets, reps, restSeconds, notes, weightValue, weightUnit)
       resetForm()
       onClose()
     } catch (error) {
@@ -115,6 +118,8 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
     setReps('10-12')
     setRestSeconds(60)
     setNotes('')
+    setWeight('')
+    setWeightUnit('kg')
     setShowCreateForm(false)
     setNewExercise({
       name: '',
@@ -507,6 +512,31 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                         className="input"
                         required
                       />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Poids (optionnel)</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="number"
+                        value={weight}
+                        onChange={(e) => setWeight(e.target.value)}
+                        placeholder="0"
+                        className="input"
+                        step="0.5"
+                        min="0"
+                        style={{ flex: 1 }}
+                      />
+                      <select
+                        value={weightUnit}
+                        onChange={(e) => setWeightUnit(e.target.value)}
+                        className="input"
+                        style={{ width: '80px' }}
+                      >
+                        <option value="kg">kg</option>
+                        <option value="lbs">lbs</option>
+                      </select>
                     </div>
                   </div>
 

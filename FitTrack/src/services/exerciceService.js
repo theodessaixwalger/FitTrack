@@ -49,10 +49,17 @@ export async function addDay(programId, dayOfWeek, name) {
 }
 
 // Exercices
-export async function addExercise(dayId, exerciseName, sets, reps) {
+export async function addExercise(dayId, exerciseName, sets, reps, weight = null, weightUnit = 'kg') {
   const { data } = await supabase
     .from('day_exercises')
-    .insert({ day_id: dayId, exercise_name: exerciseName, sets, reps })
+    .insert({ 
+      day_id: dayId, 
+      exercise_name: exerciseName, 
+      sets, 
+      reps,
+      weight,
+      weight_unit: weightUnit
+    })
     .select()
     .single()
   return data
@@ -63,6 +70,141 @@ export async function deleteExercise(exerciseId) {
     .from('day_exercises')
     .delete()
     .eq('id', exerciseId)
+}
+
+// Mettre à jour le poids d'un exercice
+export async function updateExerciseWeight(exerciseId, weight, weightUnit = 'kg') {
+  const { data } = await supabase
+    .from('day_exercises')
+    .update({ weight, weight_unit: weightUnit })
+    .eq('id', exerciseId)
+    .select()
+    .single()
+  return data
+}
+
+// ========== HISTORIQUE DES POIDS ==========
+
+// Ajouter une entrée dans l'historique
+export async function addExerciseHistory(userId, exerciseName, weight, weightUnit, sets, reps, notes = null) {
+  const { data } = await supabase
+    .from('exercise_history')
+    .insert({
+      user_id: userId,
+      exercise_name: exerciseName,
+      weight,
+      weight_unit: weightUnit,
+      sets,
+      reps,
+      notes
+    })
+    .select()
+    .single()
+  return data
+}
+
+// Récupérer l'historique d'un exercice
+export async function getExerciseHistory(userId, exerciseName, limit = 10) {
+  const { data } = await supabase
+    .from('exercise_history')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('exercise_name', exerciseName)
+    .order('performed_at', { ascending: false })
+    .limit(limit)
+  return data || []
+}
+
+// Récupérer le dernier poids utilisé pour un exercice
+export async function getLastWeight(userId, exerciseName) {
+  const { data } = await supabase
+    .from('exercise_history')
+    .select('weight, weight_unit')
+    .eq('user_id', userId)
+    .eq('exercise_name', exerciseName)
+    .order('performed_at', { ascending: false })
+    .limit(1)
+    .single()
+  return data
+}
+
+// Suggérer une augmentation de poids intelligente
+export async function suggestWeightIncrease(userId, exerciseName) {
+  const history = await getExerciseHistory(userId, exerciseName, 10)
+  
+  if (history.length < 3) {
+    return null // Pas assez de données
+  }
+
+  const lastWeight = parseFloat(history[0].weight)
+  const lastUnit = history[0].weight_unit
+  
+  // Analyser les 5 dernières séances
+  const recentSessions = history.slice(0, Math.min(5, history.length))
+  
+  // Calculer le taux de réussite (3+ séries ET 10+ reps)
+  const successfulSessions = recentSessions.filter(h => {
+    const sets = parseInt(h.sets)
+    const reps = h.reps.toString()
+    const minReps = parseInt(reps.split('-')[0]) || parseInt(reps)
+    return sets >= 3 && minReps >= 10
+  })
+  
+  const successRate = (successfulSessions.length / recentSessions.length) * 100
+  
+  // Calculer la tendance de poids
+  const weights = recentSessions.map(h => parseFloat(h.weight))
+  const avgRecent = weights.slice(0, 3).reduce((a, b) => a + b, 0) / Math.min(3, weights.length)
+  const avgPrevious = weights.slice(3, 6).reduce((a, b) => a + b, 0) / Math.max(1, weights.slice(3, 6).length)
+  const trend = avgPrevious > 0 ? ((avgRecent - avgPrevious) / avgPrevious) * 100 : 0
+  
+  // Logique de suggestion intelligente
+  let suggestion = null
+  
+  if (successRate >= 80 && trend >= -5) {
+    // Excellent : 80%+ de réussite et tendance stable/positive
+    suggestion = {
+      weight: lastWeight + 2.5,
+      unit: lastUnit,
+      confidence: 'high',
+      reason: `🔥 Excellent ! ${successRate.toFixed(0)}% de réussite sur vos dernières séances. Augmentez de 2.5${lastUnit} !`,
+      color: 'var(--success)'
+    }
+  } else if (successRate >= 60 && trend >= 0) {
+    // Bon : 60%+ de réussite et tendance positive
+    suggestion = {
+      weight: lastWeight + 1.25,
+      unit: lastUnit,
+      confidence: 'medium',
+      reason: `💪 Bien joué ! ${successRate.toFixed(0)}% de réussite. Essayez +1.25${lastUnit} pour progresser.`,
+      color: 'var(--primary)'
+    }
+  } else if (successRate >= 40) {
+    // Moyen : maintenir le poids actuel
+    suggestion = {
+      weight: lastWeight,
+      unit: lastUnit,
+      confidence: 'low',
+      reason: `⚡ Continuez à ${lastWeight}${lastUnit} pour consolider votre technique.`,
+      color: 'var(--warning)'
+    }
+  } else {
+    // Difficile : réduire légèrement
+    suggestion = {
+      weight: Math.max(lastWeight - 2.5, 0),
+      unit: lastUnit,
+      confidence: 'low',
+      reason: `🎯 Réduisez à ${Math.max(lastWeight - 2.5, 0)}${lastUnit} pour mieux maîtriser le mouvement.`,
+      color: 'var(--info)'
+    }
+  }
+  
+  return {
+    ...suggestion,
+    successRate,
+    trend,
+    sessionsAnalyzed: recentSessions.length
+  }
 }
 
 // Supprimer un jour

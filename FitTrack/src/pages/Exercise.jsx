@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Dumbbell, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, Edit2, Calendar, TrendingUp, BarChart3 } from "lucide-react";
 import { supabase } from "../config/supabase";
 import {
   getActiveProgram,
@@ -10,9 +10,11 @@ import {
   deleteExercise,
   deleteDay,
   updateDay,
-  getAllExercises
+  getAllExercises,
+  addExerciseHistory
 } from "../services/exerciceService";
 import AddExerciseModal from "../components/AddExerciseModal";
+import ExerciseHistoryModal from "../components/ExerciseHistoryModal";
 
 const DAYS = [
   "Dimanche",
@@ -25,7 +27,6 @@ const DAYS = [
 ];
 
 function Training() {
-  const [userId, setUserId] = useState(null);
   const [program, setProgram] = useState(null);
   const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,11 @@ function Training() {
   const [showNewDay, setShowNewDay] = useState(false);
   const [showNewExercise, setShowNewExercise] = useState(false);
   const [selectedDayId, setSelectedDayId] = useState(null);
-
+  const [userId, setUserId] = useState(null);
+  
+  // États pour l'historique
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedExerciseForHistory, setSelectedExerciseForHistory] = useState(null);
   // Forms
   const [programName, setProgramName] = useState("");
   const [dayName, setDayName] = useState("");
@@ -98,13 +103,19 @@ function Training() {
     loadData();
   }
 
-  async function handleAddExercise(exerciseId, sets, reps, restSeconds, notes) {
+  async function handleAddExercise(exerciseId, sets, reps, restSeconds, notes, weight, weightUnit) {
     // Récupérer le nom de l'exercice depuis la bibliothèque
     const exercises = await getAllExercises(userId);
     const exercise = exercises.find(ex => ex.id === exerciseId);
     
     if (exercise) {
-      await addExercise(selectedDayId, exercise.name, sets, reps);
+      await addExercise(selectedDayId, exercise.name, sets, reps, weight, weightUnit);
+      
+      // Enregistrer dans l'historique si un poids est spécifié
+      if (weight && userId) {
+        await addExerciseHistory(userId, exercise.name, weight, weightUnit, sets, reps, notes);
+      }
+      
       setShowNewExercise(false);
       setSelectedDayId(null);
       loadData();
@@ -294,106 +305,143 @@ function Training() {
                     position: "relative",
                     transition: "all 0.2s ease",
                     opacity: deletingExercise === exercise.id ? 0.5 : 1,
+                    padding: "16px 20px",
                   }}
                 >
-                  <div className="list-item-left" style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "10px",
-                        background: "var(--primary)",
-                        color: "white",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "16px",
-                        fontWeight: "800",
-                        marginRight: "12px",
-                      }}
-                    >
-                      {index + 1}
-                    </div>
-                    <div className="list-item-info">
-                      <h3>{exercise.exercise_name}</h3>
-                      <p
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <span>{exercise.sets} séries</span>
-                        <span style={{ opacity: 0.5 }}>•</span>
-                        <span>{exercise.reps} reps</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                    }}
-                  >
-                    <div style={{ textAlign: "right" }}>
-                      <div className="list-item-value">
-                        {exercise.sets}×{exercise.reps}
-                      </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                    {/* Gauche : Numéro + Info */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1 }}>
+                      {/* Numéro */}
                       <div
                         style={{
-                          fontSize: "11px",
-                          color: "var(--text-secondary)",
-                          fontWeight: "600",
-                          marginTop: "2px",
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "8px",
+                          background: "var(--primary)",
+                          color: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "14px",
+                          fontWeight: "700",
+                          flexShrink: 0,
                         }}
                       >
-                        Séries × Reps
+                        {index + 1}
+                      </div>
+
+                      {/* Info exercice */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h3 style={{ 
+                          margin: 0, 
+                          fontSize: "16px", 
+                          fontWeight: "700",
+                          marginBottom: "4px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}>
+                          {exercise.exercise_name}
+                        </h3>
+                        <div style={{
+                          fontSize: "14px",
+                          color: "var(--text-secondary)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          flexWrap: "wrap"
+                        }}>
+                          <span style={{ fontWeight: "600" }}>
+                            {exercise.sets} × {exercise.reps}
+                          </span>
+                          {exercise.weight && (
+                            <span style={{ 
+                              color: "var(--primary)", 
+                              fontWeight: "700",
+                              fontSize: "15px"
+                            }}>
+                              {exercise.weight} {exercise.weight_unit || 'kg'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleDeleteExercise(exercise.id)}
-                      disabled={deletingExercise === exercise.id}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: "#EF4444",
-                        cursor: "pointer",
-                        padding: "8px",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "all 0.2s ease",
-                        opacity: deletingExercise === exercise.id ? 0.5 : 1,
-                      }}
-                      onMouseOver={(e) => {
-                        if (deletingExercise !== exercise.id) {
-                          e.currentTarget.style.background =
-                            "rgba(239, 68, 68, 0.1)";
-                        }
-                      }}
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
-                    >
-                      {deletingExercise === exercise.id ? (
-                        <div
-                          style={{
-                            width: "20px",
-                            height: "20px",
-                            border: "2px solid currentColor",
-                            borderTopColor: "transparent",
-                            borderRadius: "50%",
-                            animation: "spin 0.6s linear infinite",
-                          }}
-                        />
-                      ) : (
-                        <Trash2 size={18} />
-                      )}
-                    </button>
+                    {/* Droite : Actions */}
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                      {/* Bouton Historique */}
+                      <button
+                        onClick={() => {
+                          setSelectedExerciseForHistory(exercise.exercise_name);
+                          setShowHistory(true);
+                        }}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--primary)",
+                          cursor: "pointer",
+                          padding: "8px",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = "var(--primary-bg)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = "transparent";
+                        }}
+                        title="Voir l'historique"
+                      >
+                        <BarChart3 size={18} />
+                      </button>
+
+                      {/* Bouton Supprimer */}
+                      <button
+                        onClick={() => handleDeleteExercise(exercise.id)}
+                        disabled={deletingExercise === exercise.id}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "#EF4444",
+                          cursor: "pointer",
+                          padding: "8px",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "all 0.2s ease",
+                          opacity: deletingExercise === exercise.id ? 0.5 : 1,
+                        }}
+                        onMouseOver={(e) => {
+                          if (deletingExercise !== exercise.id) {
+                            e.currentTarget.style.background =
+                              "rgba(239, 68, 68, 0.1)";
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = "transparent";
+                        }}
+                        title="Supprimer"
+                      >
+                        {deletingExercise === exercise.id ? (
+                          <div
+                            style={{
+                              width: "20px",
+                              height: "20px",
+                              border: "2px solid currentColor",
+                              borderTopColor: "transparent",
+                              borderRadius: "50%",
+                              animation: "spin 0.6s linear infinite",
+                            }}
+                          />
+                        ) : (
+                          <Trash2 size={18} />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -790,9 +838,20 @@ function Training() {
       {/* Modal Nouvel Exercice */}
       <AddExerciseModal
         isOpen={showNewExercise}
-        onClose={() => setShowNewExercise(false)}
+        onClose={() => {
+          setShowNewExercise(false);
+          setSelectedDayId(null);
+        }}
         onAddExercise={handleAddExercise}
         userId={userId}
+      />
+
+      {/* Modal d'historique */}
+      <ExerciseHistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        userId={userId}
+        exerciseName={selectedExerciseForHistory}
       />
     </div>
   );
