@@ -102,11 +102,15 @@ function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '32px' }}>
                 <div className="stat-card" style={{ padding: '20px' }}>
                   <div className="stat-label">Max</div>
-                  <div className="stat-value" style={{ fontSize: '28px' }}>{stats.max} kg</div>
+                  <div className="stat-value" style={{ fontSize: '28px' }}>
+                    {stats.max % 1 === 0 ? stats.max : stats.max.toFixed(2)} kg
+                  </div>
                 </div>
                 <div className="stat-card" style={{ padding: '20px' }}>
                   <div className="stat-label">Min</div>
-                  <div className="stat-value" style={{ fontSize: '28px' }}>{stats.min} kg</div>
+                  <div className="stat-value" style={{ fontSize: '28px' }}>
+                    {stats.min % 1 === 0 ? stats.min : stats.min.toFixed(2)} kg
+                  </div>
                 </div>
                 <div className="stat-card" style={{ padding: '20px' }}>
                   <div className="stat-label">Moyenne</div>
@@ -265,7 +269,7 @@ function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
                         fontWeight: '800', 
                         color: index === 0 ? 'var(--primary)' : 'var(--text-primary)'
                       }}>
-                        {entry.weight} {entry.weight_unit}
+                        {parseFloat(entry.weight).toFixed(entry.weight % 1 === 0 ? 0 : 2)} {entry.weight_unit}
                       </div>
                     </div>
                   </div>

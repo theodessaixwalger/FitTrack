@@ -524,8 +524,9 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                         onChange={(e) => setWeight(e.target.value)}
                         placeholder="0"
                         className="input"
-                        step="0.5"
+                        step="0.05"
                         min="0"
+                        lang="fr"
                         style={{ flex: 1 }}
                       />
                       <select
@@ -537,6 +538,13 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                         <option value="kg">kg</option>
                         <option value="lbs">lbs</option>
                       </select>
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: 'var(--text-secondary)', 
+                      marginTop: '4px' 
+                    }}>
+                      Incréments de 0.05 kg (ex: 52.5, 52.55, 52.6)
                     </div>
                   </div>
 

@@ -360,7 +360,10 @@ function Training() {
                               fontWeight: "700",
                               fontSize: "15px"
                             }}>
-                              {exercise.weight} {exercise.weight_unit || 'kg'}
+                              {parseFloat(exercise.weight) % 1 === 0 
+                                ? parseFloat(exercise.weight) 
+                                : parseFloat(exercise.weight).toFixed(2)
+                              } {exercise.weight_unit || 'kg'}
                             </span>
                           )}
                         </div>
