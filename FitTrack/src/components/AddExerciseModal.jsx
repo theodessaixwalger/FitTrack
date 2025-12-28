@@ -504,84 +504,131 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                     {sets.map((set, index) => (
                       <div key={index} style={{ 
                         display: 'flex', 
-                        gap: '8px', 
-                        marginBottom: '12px',
-                        alignItems: 'center',
-                        padding: '12px',
+                        flexDirection: 'column',
+                        gap: '12px', 
+                        marginBottom: '16px',
+                        padding: '16px',
                         background: 'var(--surface-elevated)',
-                        borderRadius: '12px'
+                        borderRadius: '12px',
+                        border: '1px solid var(--border)'
                       }}>
-                        <span style={{ 
-                          width: '30px', 
-                          fontWeight: '700',
-                          color: 'var(--text-secondary)',
-                          fontSize: '14px'
-                        }}>
-                          #{index + 1}
-                        </span>
-                        
-                        <div style={{ flex: '0 0 100px' }}>
-                          <input
-                            type="number"
-                            placeholder="Reps"
-                            value={set.reps}
-                            onChange={(e) => updateSet(index, 'reps', e.target.value)}
-                            className="input"
-                            min="1"
-                            required
-                            style={{ textAlign: 'center' }}
-                          />
-                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px', textAlign: 'center' }}>
-                            Reps
+                        {/* En-tête avec numéro et bouton supprimer */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ 
+                            fontWeight: '700',
+                            color: 'var(--primary)',
+                            fontSize: '16px'
+                          }}>
+                            Série #{index + 1}
+                          </span>
+                          
+                          <button
+                            type="button"
+                            onClick={() => removeSet(index)}
+                            disabled={sets.length === 1}
+                            style={{
+                              background: sets.length === 1 ? 'var(--surface)' : 'transparent',
+                              border: 'none',
+                              color: sets.length === 1 ? 'var(--text-secondary)' : '#EF4444',
+                              cursor: sets.length === 1 ? 'not-allowed' : 'pointer',
+                              padding: '8px',
+                              borderRadius: '8px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              opacity: sets.length === 1 ? 0.5 : 1
+                            }}
+                            title="Supprimer cette série"
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+
+                        {/* Inputs en colonne pour mobile */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {/* Répétitions */}
+                          <div>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '13px', 
+                              fontWeight: '600',
+                              marginBottom: '6px',
+                              color: 'var(--text-secondary)'
+                            }}>
+                              Répétitions
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="Reps"
+                              value={set.reps}
+                              onChange={(e) => updateSet(index, 'reps', e.target.value)}
+                              className="input"
+                              min="1"
+                              required
+                              style={{ 
+                                width: '100%',
+                                fontSize: '16px',
+                                padding: '12px',
+                                textAlign: 'center'
+                              }}
+                            />
+                          </div>
+
+                          {/* Poids et unité */}
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ 
+                                display: 'block', 
+                                fontSize: '13px', 
+                                fontWeight: '600',
+                                marginBottom: '6px',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                Poids
+                              </label>
+                              <input
+                                type="number"
+                                placeholder="Poids"
+                                value={set.weight}
+                                onChange={(e) => updateSet(index, 'weight', e.target.value)}
+                                className="input"
+                                step="0.05"
+                                min="0"
+                                style={{ 
+                                  width: '100%',
+                                  fontSize: '16px',
+                                  padding: '12px',
+                                  textAlign: 'center'
+                                }}
+                              />
+                            </div>
+                            
+                            <div style={{ width: '90px' }}>
+                              <label style={{ 
+                                display: 'block', 
+                                fontSize: '13px', 
+                                fontWeight: '600',
+                                marginBottom: '6px',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                Unité
+                              </label>
+                              <select
+                                value={set.weight_unit}
+                                onChange={(e) => updateSet(index, 'weight_unit', e.target.value)}
+                                className="input"
+                                style={{ 
+                                  width: '100%',
+                                  fontSize: '16px',
+                                  padding: '12px'
+                                }}
+                              >
+                                <option value="kg">kg</option>
+                                <option value="lbs">lbs</option>
+                              </select>
+                            </div>
                           </div>
                         </div>
-                        
-                        <div style={{ flex: 1 }}>
-                          <input
-                            type="number"
-                            placeholder="Poids"
-                            value={set.weight}
-                            onChange={(e) => updateSet(index, 'weight', e.target.value)}
-                            className="input"
-                            step="0.05"
-                            min="0"
-                            style={{ textAlign: 'center' }}
-                          />
-                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px', textAlign: 'center' }}>
-                            Poids
-                          </div>
-                        </div>
-                        
-                        <select
-                          value={set.weight_unit}
-                          onChange={(e) => updateSet(index, 'weight_unit', e.target.value)}
-                          className="input"
-                          style={{ width: '70px' }}
-                        >
-                          <option value="kg">kg</option>
-                          <option value="lbs">lbs</option>
-                        </select>
-                        
-                        <button
-                          type="button"
-                          onClick={() => removeSet(index)}
-                          disabled={sets.length === 1}
-                          style={{
-                            background: sets.length === 1 ? 'var(--surface)' : 'transparent',
-                            border: 'none',
-                            color: sets.length === 1 ? 'var(--text-secondary)' : '#EF4444',
-                            cursor: sets.length === 1 ? 'not-allowed' : 'pointer',
-                            padding: '8px',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: sets.length === 1 ? 0.5 : 1
-                          }}
-                          title="Supprimer cette série"
-                        >
-                          <X size={18} />
-                        </button>
                       </div>
                     ))}
                     
