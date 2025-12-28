@@ -385,7 +385,7 @@ function Training() {
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                     {/* Gauche : Numéro + Info */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1, minWidth: 0, overflow: "hidden" }}>
                       {/* Numéro */}
                       <div
                         style={{
@@ -406,7 +406,7 @@ function Training() {
                       </div>
 
                       {/* Info exercice */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
                         <h3 style={{ 
                           margin: 0, 
                           fontSize: "16px", 
@@ -471,7 +471,7 @@ function Training() {
                     </div>
 
                     {/* Droite : Actions */}
-                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
                       {/* Bouton Historique */}
                       <button
                         onClick={() => {
