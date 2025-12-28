@@ -8,14 +8,15 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState('all')
-  const [sets, setSets] = useState(3)
-  const [reps, setReps] = useState('10-12')
   const [restSeconds, setRestSeconds] = useState(60)
   const [notes, setNotes] = useState('')
-  const [weight, setWeight] = useState('')
-  const [weightUnit, setWeightUnit] = useState('kg')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  
+  // Nouveau format : tableau de sets individuels
+  const [sets, setSets] = useState([
+    { reps: '', weight: '', weight_unit: 'kg' }
+  ])
   
   // États pour créer un nouvel exercice
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -70,10 +71,21 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
     e.preventDefault()
     if (!selectedExercise) return
 
+    // Valider que tous les sets ont des reps
+    const validSets = sets.filter(set => set.reps && set.reps > 0)
+    if (validSets.length === 0) {
+      alert('Veuillez renseigner au moins une série avec des répétitions')
+      return
+    }
+
     setIsSubmitting(true)
     try {
-      const weightValue = weight ? parseFloat(weight) : null
-      await onAddExercise(selectedExercise.id, sets, reps, restSeconds, notes, weightValue, weightUnit)
+      await onAddExercise(
+        selectedExercise.id,
+        validSets, // Nouveau format : tableau de sets
+        restSeconds,
+        notes
+      )
       resetForm()
       onClose()
     } catch (error) {
@@ -114,12 +126,9 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
     setSelectedExercise(null)
     setSearchTerm('')
     setSelectedMuscleGroup('all')
-    setSets(3)
-    setReps('10-12')
+    setSets([{ reps: '', weight: '', weight_unit: 'kg' }])
     setRestSeconds(60)
     setNotes('')
-    setWeight('')
-    setWeightUnit('kg')
     setShowCreateForm(false)
     setNewExercise({
       name: '',
@@ -127,6 +136,23 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
       equipment: '',
       description: ''
     })
+  }
+  
+  // Fonctions pour gérer les sets
+  const addSet = () => {
+    setSets([...sets, { reps: '', weight: '', weight_unit: 'kg' }])
+  }
+  
+  const removeSet = (index) => {
+    if (sets.length > 1) {
+      setSets(sets.filter((_, i) => i !== index))
+    }
+  }
+  
+  const updateSet = (index, field, value) => {
+    const newSets = [...sets]
+    newSets[index][field] = value
+    setSets(newSets)
   }
 
   if (!isOpen) return null
@@ -470,82 +496,131 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                   </div>
 
                   {/* Configuration */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '16px',
-                    marginBottom: '16px'
-                  }}>
-                    <div className="form-group">
-                      <label>Séries</label>
-                      <input
-                        type="number"
-                        value={sets}
-                        onChange={(e) => setSets(Number(e.target.value))}
-                        min="1"
-                        max="10"
-                        className="input"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Répétitions</label>
-                      <input
-                        type="text"
-                        value={reps}
-                        onChange={(e) => setReps(e.target.value)}
-                        placeholder="10-12"
-                        className="input"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Repos (sec)</label>
-                      <input
-                        type="number"
-                        value={restSeconds}
-                        onChange={(e) => setRestSeconds(Number(e.target.value))}
-                        min="0"
-                        step="15"
-                        className="input"
-                        required
-                      />
-                    </div>
+                  <div className="form-group">
+                    <label style={{ marginBottom: '12px', display: 'block', fontWeight: '600' }}>
+                      Séries ({sets.length})
+                    </label>
+                    
+                    {sets.map((set, index) => (
+                      <div key={index} style={{ 
+                        display: 'flex', 
+                        gap: '8px', 
+                        marginBottom: '12px',
+                        alignItems: 'center',
+                        padding: '12px',
+                        background: 'var(--surface-elevated)',
+                        borderRadius: '12px'
+                      }}>
+                        <span style={{ 
+                          width: '30px', 
+                          fontWeight: '700',
+                          color: 'var(--text-secondary)',
+                          fontSize: '14px'
+                        }}>
+                          #{index + 1}
+                        </span>
+                        
+                        <div style={{ flex: '0 0 100px' }}>
+                          <input
+                            type="number"
+                            placeholder="Reps"
+                            value={set.reps}
+                            onChange={(e) => updateSet(index, 'reps', e.target.value)}
+                            className="input"
+                            min="1"
+                            required
+                            style={{ textAlign: 'center' }}
+                          />
+                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px', textAlign: 'center' }}>
+                            Reps
+                          </div>
+                        </div>
+                        
+                        <div style={{ flex: 1 }}>
+                          <input
+                            type="number"
+                            placeholder="Poids"
+                            value={set.weight}
+                            onChange={(e) => updateSet(index, 'weight', e.target.value)}
+                            className="input"
+                            step="0.05"
+                            min="0"
+                            style={{ textAlign: 'center' }}
+                          />
+                          <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px', textAlign: 'center' }}>
+                            Poids
+                          </div>
+                        </div>
+                        
+                        <select
+                          value={set.weight_unit}
+                          onChange={(e) => updateSet(index, 'weight_unit', e.target.value)}
+                          className="input"
+                          style={{ width: '70px' }}
+                        >
+                          <option value="kg">kg</option>
+                          <option value="lbs">lbs</option>
+                        </select>
+                        
+                        <button
+                          type="button"
+                          onClick={() => removeSet(index)}
+                          disabled={sets.length === 1}
+                          style={{
+                            background: sets.length === 1 ? 'var(--surface)' : 'transparent',
+                            border: 'none',
+                            color: sets.length === 1 ? 'var(--text-secondary)' : '#EF4444',
+                            cursor: sets.length === 1 ? 'not-allowed' : 'pointer',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: sets.length === 1 ? 0.5 : 1
+                          }}
+                          title="Supprimer cette série"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ))}
+                    
+                    <button
+                      type="button"
+                      onClick={addSet}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '2px dashed var(--border)',
+                        background: 'transparent',
+                        color: 'var(--primary)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        marginTop: '8px'
+                      }}
+                    >
+                      <Plus size={20} />
+                      Ajouter une série
+                    </button>
                   </div>
 
                   <div className="form-group">
-                    <label>Poids (optionnel)</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input
-                        type="number"
-                        value={weight}
-                        onChange={(e) => setWeight(e.target.value)}
-                        placeholder="0"
-                        className="input"
-                        step="0.05"
-                        min="0"
-                        lang="fr"
-                        style={{ flex: 1 }}
-                      />
-                      <select
-                        value={weightUnit}
-                        onChange={(e) => setWeightUnit(e.target.value)}
-                        className="input"
-                        style={{ width: '80px' }}
-                      >
-                        <option value="kg">kg</option>
-                        <option value="lbs">lbs</option>
-                      </select>
-                    </div>
-                    <div style={{ 
-                      fontSize: '12px', 
-                      color: 'var(--text-secondary)', 
-                      marginTop: '4px' 
-                    }}>
-                      Incréments de 0.05 kg (ex: 52.5, 52.55, 52.6)
-                    </div>
+                    <label>Repos (sec)</label>
+                    <input
+                      type="number"
+                      value={restSeconds}
+                      onChange={(e) => setRestSeconds(Number(e.target.value))}
+                      min="0"
+                      step="15"
+                      className="input"
+                      required
+                    />
                   </div>
 
                   <div className="form-group">

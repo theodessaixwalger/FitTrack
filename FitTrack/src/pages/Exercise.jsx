@@ -11,26 +11,28 @@ import {
   deleteDay,
   updateDay,
   getAllExercises,
-  addExerciseHistory
+  addExerciseHistory,
+  getExerciseSets,
+  updateExerciseSets
 } from "../services/exerciceService";
 import AddExerciseModal from "../components/AddExerciseModal";
+import EditExerciseModal from "../components/EditExerciseModal";
 import ExerciseHistoryModal from "../components/ExerciseHistoryModal";
 
 const DAYS = [
-  "Dimanche",
   "Lundi",
   "Mardi",
   "Mercredi",
   "Jeudi",
   "Vendredi",
   "Samedi",
+  "Dimanche",
 ];
 
 function Training() {
   const [program, setProgram] = useState(null);
   const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedDay, setExpandedDay] = useState(null);
   const [deletingExercise, setDeletingExercise] = useState(null);
 
   // Modals
@@ -43,6 +45,11 @@ function Training() {
   // États pour l'historique
   const [showHistory, setShowHistory] = useState(false);
   const [selectedExerciseForHistory, setSelectedExerciseForHistory] = useState(null);
+  const [expandedDay, setExpandedDay] = useState(null);
+  
+  // États pour le modal d'édition
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingExercise, setEditingExercise] = useState(null);
   // Forms
   const [programName, setProgramName] = useState("");
   const [dayName, setDayName] = useState("");
@@ -81,6 +88,17 @@ function Training() {
     setProgram(prog);
     if (prog) {
       const programDays = await getProgramDays(prog.id);
+      
+      // Charger les sets pour chaque exercice
+      for (const day of programDays) {
+        if (day.exercises && day.exercises.length > 0) {
+          for (const exercise of day.exercises) {
+            const sets = await getExerciseSets(exercise.id);
+            exercise.sets = sets;
+          }
+        }
+      }
+      
       setDays(programDays);
     }
     setLoading(false);
@@ -103,22 +121,47 @@ function Training() {
     loadData();
   }
 
-  async function handleAddExercise(exerciseId, sets, reps, restSeconds, notes, weight, weightUnit) {
+  async function handleAddExercise(exerciseId, setsArray, restSeconds, notes) {
     // Récupérer le nom de l'exercice depuis la bibliothèque
     const exercises = await getAllExercises(userId);
     const exercise = exercises.find(ex => ex.id === exerciseId);
     
     if (exercise) {
-      await addExercise(selectedDayId, exercise.name, sets, reps, weight, weightUnit);
+      // Ajouter l'exercice avec les sets individuels
+      await addExercise(selectedDayId, exercise.name, setsArray);
       
-      // Enregistrer dans l'historique si un poids est spécifié
-      if (weight && userId) {
-        await addExerciseHistory(userId, exercise.name, weight, weightUnit, sets, reps, notes);
+      // Enregistrer dans l'historique chaque set avec un poids
+      if (userId && setsArray.length > 0) {
+        for (const set of setsArray) {
+          if (set.weight && set.weight > 0) {
+            await addExerciseHistory(
+              userId,
+              exercise.name,
+              set.weight,
+              set.weight_unit,
+              1, // 1 série à la fois
+              set.reps,
+              notes
+            );
+          }
+        }
       }
       
       setShowNewExercise(false);
       setSelectedDayId(null);
       loadData();
+    }
+  }
+
+  async function handleUpdateExercise(exerciseId, sets, deletedSetIds) {
+    try {
+      await updateExerciseSets(exerciseId, sets, deletedSetIds);
+      setShowEditModal(false);
+      setEditingExercise(null);
+      loadData();
+    } catch (error) {
+      console.error('Erreur lors de la modification:', error);
+      alert('Erreur lors de la modification de l\'exercice');
     }
   }
 
@@ -155,7 +198,12 @@ function Training() {
     setEditDayOfWeek(day.day_of_week);
   }
 
-  const getTodayDayOfWeek = () => new Date().getDay();
+  // Retourne le jour de la semaine (0 = Lundi, 6 = Dimanche)
+  const getTodayDayOfWeek = () => {
+    const day = new Date().getDay();
+    // Convertir de 0=Dimanche à 0=Lundi
+    return day === 0 ? 6 : day - 1;
+  };
 
   const getTotalExercises = () => {
     return days.reduce((total, day) => total + (day.exercises?.length || 0), 0);
@@ -174,10 +222,34 @@ function Training() {
         }}
       >
         <div className="section-header">
-          <h2 className="section-title">
-            {isToday && <span style={{ marginRight: "8px" }}>⭐</span>}
-            {DAYS[day.day_of_week]} - {day.name}
-          </h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Bouton chevron pour dérouler/cacher */}
+            <button
+              onClick={() => setExpandedDay(expandedDay === day.id ? null : day.id)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "transform 0.2s ease",
+                transform: expandedDay === day.id ? "rotate(90deg)" : "rotate(0deg)",
+              }}
+              title={expandedDay === day.id ? "Cacher les exercices" : "Afficher les exercices"}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+
+            <h2 className="section-title">
+              {isToday && <span style={{ marginRight: "8px" }}>⭐</span>}
+              {DAYS[day.day_of_week]} - {day.name}
+            </h2>
+          </div>
 
           <div style={{ display: "flex", gap: "8px" }}>
             {/* Bouton Modifier */}
@@ -294,10 +366,13 @@ function Training() {
           </div>
         </div>
 
-        {hasExercises ? (
-          <div className="card">
-            <div className="card-body" style={{ padding: "0" }}>
-              {day.exercises.map((exercise, index) => (
+        {/* Exercices - Affichés seulement si le jour est déplié */}
+        {expandedDay === day.id && (
+          <>
+            {hasExercises ? (
+              <div className="card">
+                <div className="card-body" style={{ padding: "0" }}>
+                  {day.exercises.map((exercise, index) => (
                 <div
                   key={exercise.id}
                   className="list-item"
@@ -336,37 +411,62 @@ function Training() {
                           margin: 0, 
                           fontSize: "16px", 
                           fontWeight: "700",
-                          marginBottom: "4px",
+                          marginBottom: "8px",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap"
                         }}>
                           {exercise.exercise_name}
                         </h3>
-                        <div style={{
-                          fontSize: "14px",
-                          color: "var(--text-secondary)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                          flexWrap: "wrap"
-                        }}>
-                          <span style={{ fontWeight: "600" }}>
-                            {exercise.sets} × {exercise.reps}
-                          </span>
-                          {exercise.weight && (
-                            <span style={{ 
-                              color: "var(--primary)", 
-                              fontWeight: "700",
-                              fontSize: "15px"
-                            }}>
-                              {parseFloat(exercise.weight) % 1 === 0 
-                                ? parseFloat(exercise.weight) 
-                                : parseFloat(exercise.weight).toFixed(2)
-                              } {exercise.weight_unit || 'kg'}
-                            </span>
-                          )}
-                        </div>
+                        
+                        {/* Afficher les sets individuels si disponibles */}
+                        {Array.isArray(exercise.sets) && exercise.sets.length > 0 ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            {exercise.sets.map((set, setIndex) => (
+                              <div key={set.id} style={{
+                                fontSize: "13px",
+                                color: "var(--text-secondary)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px"
+                              }}>
+                                <span style={{ 
+                                  fontWeight: "600",
+                                  color: "var(--text-primary)",
+                                  minWidth: "50px"
+                                }}>
+                                  Set {set.set_number}:
+                                </span>
+                                <span style={{ fontWeight: "600" }}>
+                                  {set.reps} reps
+                                </span>
+                                {set.weight && (
+                                  <>
+                                    <span style={{ opacity: 0.5 }}>×</span>
+                                    <span style={{ 
+                                      color: "var(--primary)", 
+                                      fontWeight: "700"
+                                    }}>
+                                      {parseFloat(set.weight) % 1 === 0 
+                                        ? parseFloat(set.weight) 
+                                        : parseFloat(set.weight).toFixed(2)
+                                      } {set.weight_unit}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          // Pas de sets enregistrés
+                          <div style={{
+                            fontSize: "13px",
+                            color: "var(--text-secondary)",
+                            fontStyle: "italic"
+                          }}>
+                            Aucune série enregistrée
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -399,6 +499,37 @@ function Training() {
                         title="Voir l'historique"
                       >
                         <BarChart3 size={18} />
+                      </button>
+
+                      {/* Bouton Modifier */}
+                      <button
+                        onClick={() => {
+                          setEditingExercise(exercise);
+                          setShowEditModal(true);
+                        }}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-secondary)",
+                          cursor: "pointer",
+                          padding: "8px",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = "var(--surface-elevated)";
+                          e.currentTarget.style.color = "var(--text-primary)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = "transparent";
+                          e.currentTarget.style.color = "var(--text-secondary)";
+                        }}
+                        title="Modifier l'exercice"
+                      >
+                        <Edit2 size={18} />
                       </button>
 
                       {/* Bouton Supprimer */}
@@ -465,6 +596,8 @@ function Training() {
           >
             Aucun exercice ajouté
           </div>
+        )}
+          </>
         )}
       </div>
     );
@@ -838,7 +971,7 @@ function Training() {
         </div>
       )}
 
-      {/* Modal Nouvel Exercice */}
+      {/* Modal d'ajout d'exercice */}
       <AddExerciseModal
         isOpen={showNewExercise}
         onClose={() => {
@@ -847,6 +980,17 @@ function Training() {
         }}
         onAddExercise={handleAddExercise}
         userId={userId}
+      />
+
+      {/* Modal d'édition d'exercice */}
+      <EditExerciseModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingExercise(null);
+        }}
+        exercise={editingExercise}
+        onSave={handleUpdateExercise}
       />
 
       {/* Modal d'historique */}

@@ -49,20 +49,36 @@ export async function addDay(programId, dayOfWeek, name) {
 }
 
 // Exercices
-export async function addExercise(dayId, exerciseName, sets, reps, weight = null, weightUnit = 'kg') {
-  const { data } = await supabase
+export async function addExercise(dayId, exerciseName, setsData = null, reps = null, weight = null, weightUnit = 'kg') {
+  // Si setsData est un tableau, c'est le nouveau format avec sets individuels
+  // Sinon, c'est l'ancien format avec sets/reps/weight globaux
+  
+  const isNewFormat = Array.isArray(setsData)
+  
+  const { data: exercise, error: exerciseError } = await supabase
     .from('day_exercises')
     .insert({ 
       day_id: dayId, 
-      exercise_name: exerciseName, 
-      sets, 
-      reps,
-      weight,
-      weight_unit: weightUnit
+      exercise_name: exerciseName,
+      // Pour rétrocompatibilité, on garde les anciennes colonnes si format ancien
+      sets: isNewFormat ? null : setsData,
+      reps: isNewFormat ? null : reps,
+      weight: isNewFormat ? null : weight,
+      weight_unit: isNewFormat ? null : weightUnit
     })
     .select()
     .single()
-  return data
+  
+  if (exerciseError) {
+    throw exerciseError
+  }
+  
+  // Si nouveau format, ajouter les sets individuels
+  if (isNewFormat && setsData.length > 0) {
+    await addExerciseSets(exercise.id, setsData)
+  }
+  
+  return exercise
 }
 
 export async function deleteExercise(exerciseId) {
@@ -380,4 +396,154 @@ export async function initializeDefaultExercises(userId) {
   }
 
   return data
+}
+
+// ===================================
+// EXERCISE SETS (Séries individuelles)
+// ===================================
+
+// Ajouter un set à un exercice
+export async function addExerciseSet(exerciseId, setNumber, reps, weight, weightUnit = 'kg') {
+  const { data } = await supabase
+    .from('exercise_sets')
+    .insert({
+      exercise_id: exerciseId,
+      set_number: setNumber,
+      reps,
+      weight,
+      weight_unit: weightUnit
+    })
+    .select()
+    .single()
+  return data
+}
+
+// Ajouter plusieurs sets en une fois
+export async function addExerciseSets(exerciseId, sets) {
+  // sets = [{ reps: 12, weight: 50, weight_unit: 'kg' }, ...]
+  const setsData = sets.map((set, index) => ({
+    exercise_id: exerciseId,
+    set_number: index + 1,
+    reps: set.reps,
+    weight: set.weight,
+    weight_unit: set.weight_unit || 'kg'
+  }))
+  
+  const { data, error } = await supabase
+    .from('exercise_sets')
+    .insert(setsData)
+    .select()
+  
+  if (error) {
+    throw error
+  }
+  
+  return data
+}
+
+// Récupérer tous les sets d'un exercice
+export async function getExerciseSets(exerciseId) {
+  const { data } = await supabase
+    .from('exercise_sets')
+    .select('*')
+    .eq('exercise_id', exerciseId)
+    .order('set_number', { ascending: true })
+  return data || []
+}
+
+// Mettre à jour un set
+export async function updateExerciseSet(setId, reps, weight, weightUnit) {
+  const { data } = await supabase
+    .from('exercise_sets')
+    .update({ 
+      reps, 
+      weight, 
+      weight_unit: weightUnit 
+    })
+    .eq('id', setId)
+    .select()
+    .single()
+  return data
+}
+
+// Supprimer un set
+export async function deleteExerciseSet(setId) {
+  await supabase
+    .from('exercise_sets')
+    .delete()
+    .eq('id', setId)
+}
+
+// Supprimer tous les sets d'un exercice
+export async function deleteAllExerciseSets(exerciseId) {
+  await supabase
+    .from('exercise_sets')
+    .delete()
+    .eq('exercise_id', exerciseId)
+}
+
+// Mettre à jour les sets d'un exercice (ajouter, modifier, supprimer)
+export async function updateExerciseSets(exerciseId, sets, deletedSetIds = []) {
+  try {
+    // 1. Supprimer les sets marqués pour suppression
+    if (deletedSetIds.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('exercise_sets')
+        .delete()
+        .in('id', deletedSetIds)
+      
+      if (deleteError) throw deleteError
+    }
+    
+    // 2. Séparer les sets existants et nouveaux
+    const existingSets = sets.filter(set => set.id)
+    const newSets = sets.filter(set => !set.id)
+    
+    // 3. Mettre à jour les sets existants
+    if (existingSets.length > 0) {
+      for (const set of existingSets) {
+        const { error: updateError } = await supabase
+          .from('exercise_sets')
+          .update({
+            reps: set.reps,
+            weight: set.weight || null,
+            weight_unit: set.weight_unit || 'kg'
+          })
+          .eq('id', set.id)
+        
+        if (updateError) throw updateError
+      }
+    }
+    
+    // 4. Insérer les nouveaux sets
+    if (newSets.length > 0) {
+      const setsData = newSets.map((set, index) => ({
+        exercise_id: exerciseId,
+        set_number: existingSets.length + index + 1,
+        reps: set.reps,
+        weight: set.weight || null,
+        weight_unit: set.weight_unit || 'kg'
+      }))
+      
+      const { error: insertError } = await supabase
+        .from('exercise_sets')
+        .insert(setsData)
+      
+      if (insertError) throw insertError
+    }
+    
+    // 5. Renumeroter tous les sets
+    const allSets = await getExerciseSets(exerciseId)
+    for (let i = 0; i < allSets.length; i++) {
+      await supabase
+        .from('exercise_sets')
+        .update({ set_number: i + 1 })
+        .eq('id', allSets[i].id)
+    }
+    
+    return true
+  } catch (error) {
+    console.error('Error updating exercise sets:', error)
+    throw error
+  }
 }
