@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { X, Search, Plus } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { X, Plus, Search } from 'lucide-react'
 import { searchFoods, addFood } from '../services/foodService'
 
 function AddFoodModal({ isOpen, onClose, onAddFood }) {
@@ -56,7 +57,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood }) {
 
   if (!isOpen) return null
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed',
       top: 0,
@@ -67,7 +68,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood }) {
       display: 'flex',
       alignItems: 'flex-end',
       justifyContent: 'center',
-      zIndex: 2000,
+      zIndex: 10000,
       backdropFilter: 'blur(4px)'
     }}>
       <div style={{
@@ -423,7 +424,8 @@ function AddFoodModal({ isOpen, onClose, onAddFood }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
