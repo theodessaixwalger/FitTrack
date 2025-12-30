@@ -47,7 +47,16 @@ function Auth() {
         // Connexion
         const { data, error } = await signIn(email, password);
         if (error) {
-          setError(error.message);
+          // Vérifier si c'est une erreur d'email non confirmé
+          if (error.message.includes('Email not confirmed') || 
+              error.message.includes('email_not_confirmed') ||
+              error.code === 'email_not_confirmed') {
+            setError('📧 Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception.');
+          } else if (error.message.includes('Invalid login credentials')) {
+            setError('❌ Email ou mot de passe incorrect.');
+          } else {
+            setError(error.message);
+          }
         } else if (data) {
           navigate('/');
         }

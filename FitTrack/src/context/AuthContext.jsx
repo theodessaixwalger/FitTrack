@@ -64,9 +64,10 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error('❌ Erreur Supabase signIn:', error);
+        // Retourner l'erreur originale pour permettre la détection du type d'erreur
         return { 
           data: null, 
-          error: { message: 'Email ou mot de passe incorrect' }
+          error: error // Retourne l'objet error complet de Supabase
         };
       }
 
