@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { getMealsByDate, calculateDailyNutrition } from '../services/mealService'
 import { getUserProfile, updateUserProfile } from '../services/profileService'
+import { logActivity } from '../services/streakService'
 import { useAuth } from './AuthContext'
 
 const NutritionContext = createContext()
@@ -75,6 +76,16 @@ export function NutritionProvider({ children }) {
       const nutrition = calculateDailyNutrition(data)
       setDailyNutrition(nutrition)
       setLastUpdate(Date.now())
+      
+      // Logger l'activité pour le streak si des repas sont présents
+      if (data && data.length > 0) {
+        try {
+          await logActivity(user.id, false, true) // has_logged_nutrition = true
+        } catch (error) {
+          console.error('Error logging nutrition activity for streak:', error)
+          // Ne pas bloquer si le logging échoue
+        }
+      }
     } catch (error) {
       console.error('Erreur chargement repas:', error)
     } finally {

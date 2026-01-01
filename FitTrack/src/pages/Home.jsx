@@ -2,6 +2,7 @@ import { Plus, Activity, TrendingUp, Flame, Target, Award } from "lucide-react";
 import { useNutrition } from "../context/NutritionContext";
 import { useNavigate } from "react-router-dom";
 import PersonalNote from "../components/PersonalNote";
+import StreakIndicator from "../components/StreakIndicator";
 import { useState, useEffect } from "react";
 import { supabase } from "../config/supabase";
 
@@ -105,6 +106,9 @@ function Home() {
       </div>
 
       <div className="page-content">
+        {/* Streak Indicator */}
+        {userId && <StreakIndicator userId={userId} />}
+        
         {/* Reste du code... */}
         <div className="hero-card">
           <div className="label">Calories aujourd'hui</div>

@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase'
+import { logActivity } from './streakService'
 
 // Programmes
 export async function getActiveProgram(userId) {
@@ -76,6 +77,17 @@ export async function addExercise(dayId, exerciseName, setsData = null, reps = n
   // Si nouveau format, ajouter les sets individuels
   if (isNewFormat && setsData.length > 0) {
     await addExerciseSets(exercise.id, setsData)
+  }
+  
+  // Logger l'activité pour le streak
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await logActivity(user.id, true, false) // has_workout = true
+    }
+  } catch (error) {
+    console.error('Error logging activity for streak:', error)
+    // Ne pas bloquer si le logging échoue
   }
   
   return exercise
