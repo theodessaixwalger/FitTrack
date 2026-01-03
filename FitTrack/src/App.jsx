@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Nutrition from './pages/Nutrition';
 import Exercise from './pages/Exercise';
 import Profile from './pages/Profile';
+import Privacy from './pages/Privacy';
 import Auth from './pages/Auth';
 import Onboarding from './pages/Onboarding';
 
@@ -165,6 +166,7 @@ function App() {
                 <Route path="/nutrition" element={<Nutrition />} />
                 <Route path="/exercise" element={<Exercise />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/privacy" element={<Privacy />} />
               </Route>
 
               {/* Redirection par défaut */}

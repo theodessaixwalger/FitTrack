@@ -950,7 +950,11 @@ function Profile() {
                 <ChevronRight size={20} color="var(--text-tertiary)" />
               </div>
 
-              <div className="menu-item">
+              <div 
+                className="menu-item"
+                onClick={() => navigate('/privacy')}
+                style={{ cursor: 'pointer' }}
+              >
                 <div
                   style={{
                     display: "flex",
@@ -972,7 +976,7 @@ function Profile() {
                   >
                     <Shield size={20} />
                   </div>
-                  <span>Confidentialité</span>
+                  <span>Confidentialité & Sécurité</span>
                 </div>
                 <ChevronRight size={20} color="var(--text-tertiary)" />
               </div>
