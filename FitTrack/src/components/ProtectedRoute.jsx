@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
-  console.log('🛡️ ProtectedRoute:', { user: !!user, loading });
+
 
   // ⚠️ CRITIQUE : Si loading est true, on attend
   if (loading) {
@@ -25,12 +25,12 @@ function ProtectedRoute({ children }) {
 
   // Si pas d'utilisateur, rediriger vers login
   if (!user) {
-    console.log('❌ Pas d\'utilisateur, redirect vers /login');
+
     return <Navigate to="/login" replace />;
   }
 
   // Tout est OK, afficher le contenu
-  console.log('✅ Utilisateur OK, affichage du contenu');
+
   return children;
 }
 

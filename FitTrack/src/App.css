@@ -15,27 +15,28 @@
   --secondary: #4ECDC4;
   --secondary-dark: #45B8B0;
   
-  --success: #2ECC71;
+  --success: #10B981;
   --warning: #F39C12;
   --danger: #E74C3C;
+  --error: #EF4444;
   
   /* Backgrounds */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F8F9FA;
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #f0f0f0;
   --bg-card: #FFFFFF;
   
   /* Surfaces */
-  --surface: #FFFFFF;
+  --surface: white;
   --surface-hover: #F5F6F7;
   
   /* Texte */
-  --text-primary: #1A1A1A;
-  --text-secondary: #6B7280;
-  --text-tertiary: #9CA3AF;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666;
+  --text-tertiary: #999;
   
   /* Borders */
   --border: #E5E7EB;
-  --border-light: #F3F4F6;
+  --border-light: #e0e0e0;
   
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);

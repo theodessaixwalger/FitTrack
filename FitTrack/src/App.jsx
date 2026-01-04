@@ -11,6 +11,7 @@ import Nutrition from './pages/Nutrition';
 import Exercise from './pages/Exercise';
 import Profile from './pages/Profile';
 import Privacy from './pages/Privacy';
+import Settings from './pages/Settings';
 import Auth from './pages/Auth';
 import Onboarding from './pages/Onboarding';
 
@@ -167,6 +168,7 @@ function App() {
                 <Route path="/exercise" element={<Exercise />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/settings" element={<Settings />} />
               </Route>
 
               {/* Redirection par défaut */}

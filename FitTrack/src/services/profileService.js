@@ -25,7 +25,7 @@ export async function saveUserProfile(profileData) {
       updated_at: new Date().toISOString()
     }
 
-    console.log('Saving profile:', profileToSave)
+
 
     const { data, error } = await supabase
       .from('user_profiles')
@@ -40,7 +40,7 @@ export async function saveUserProfile(profileData) {
       throw error
     }
 
-    console.log('Profile saved:', data)
+
     return data
   } catch (error) {
     console.error('Erreur sauvegarde profil:', error)
@@ -59,7 +59,7 @@ export async function getUserProfile() {
     }
 
     if (!user) {
-      console.log('No authenticated user')
+
       throw new Error('Utilisateur non connecté')
     }
 
@@ -118,7 +118,7 @@ export async function updateUserProfile(updates) {
       throw error
     }
 
-    console.log('Profile updated:', data)
+
     return data
   } catch (error) {
     console.error('Erreur mise à jour profil:', error)

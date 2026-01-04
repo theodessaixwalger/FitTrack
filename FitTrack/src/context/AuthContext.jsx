@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
   // Inscription SIMPLIFIÉE
   const signUp = async (email, password, fullName) => {
     try {
-      console.log('📝 Inscription avec:', email);
+
       
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
         return { data: null, error };
       }
 
-      console.log('✅ Inscription réussie:', data);
+
       return { data, error: null };
       
     } catch (error) {
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
   // Connexion SIMPLIFIÉE
   const signIn = async (email, password) => {
     try {
-      console.log('🔐 Tentative de connexion avec:', email);
+
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
         };
       }
 
-      console.log('✅ Connexion réussie:', data);
+
       return { data, error: null };
       
     } catch (error) {

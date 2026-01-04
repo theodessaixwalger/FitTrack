@@ -896,7 +896,11 @@ function Profile() {
 
           <div className="card">
             <div className="card-body" style={{ padding: "0" }}>
-              <div className="menu-item">
+              <div 
+                className="menu-item"
+                onClick={() => navigate('/settings')}
+                style={{ cursor: 'pointer' }}
+              >
                 <div
                   style={{
                     display: "flex",
