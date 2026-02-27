@@ -3,7 +3,7 @@ import { X, Plus } from 'lucide-react'
 import { getDayName } from '../services/exerciceService'
 
 function AddDayModal({ isOpen, onClose, onAddDay, existingDays }) {
-  const [selectedDay, setSelectedDay] = useState(1)
+  const [selectedDay, setSelectedDay] = useState(() => new Date().getDay())
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -18,7 +18,7 @@ function AddDayModal({ isOpen, onClose, onAddDay, existingDays }) {
     { value: 0, label: 'Dimanche' },
   ]
 
-  const availableDays = daysOfWeek.filter(day => 
+  const availableDays = daysOfWeek.filter(day =>
     !existingDays?.some(d => d.day_of_week === day.value)
   )
 
