@@ -12,6 +12,7 @@ import Exercise from './pages/Exercise';
 import Profile from './pages/Profile';
 import Privacy from './pages/Privacy';
 import Settings from './pages/Settings';
+import Recipes from './pages/Recipes';
 import Auth from './pages/Auth';
 import Onboarding from './pages/Onboarding';
 
@@ -115,7 +116,7 @@ function SplashRoute({ children }) {
   useEffect(() => {
     // Vérifier si le splash a déjà été vu dans cette session
     const splashShown = sessionStorage.getItem('splashShown');
-    
+
     if (splashShown) {
       setShowSplash(false);
     } else {
@@ -169,6 +170,7 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/recipes" element={<Recipes />} />
               </Route>
 
               {/* Redirection par défaut */}

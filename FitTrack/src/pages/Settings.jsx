@@ -1,11 +1,10 @@
-import { ArrowLeft, Globe, Bell, Trash2, Moon, Sun, Lock, ChevronRight, X } from 'lucide-react'
+import { ArrowLeft, Globe, Bell, Trash2, Lock, ChevronRight, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase'
 
 function Settings() {
   const navigate = useNavigate()
-  const [theme, setTheme] = useState('light')
   const [language, setLanguage] = useState('fr')
   const [notificationPrefs, setNotificationPrefs] = useState({
     meals: true,
@@ -33,24 +32,12 @@ function Settings() {
 
   // Load settings from localStorage
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light'
     const savedLanguage = localStorage.getItem('language') || 'fr'
     const savedNotifications = JSON.parse(localStorage.getItem('notificationPrefs') || '{"meals":true,"workouts":true,"streak":true,"weigh":false}')
     
-    setTheme(savedTheme)
     setLanguage(savedLanguage)
     setNotificationPrefs(savedNotifications)
-    
-    // Apply theme
-    document.documentElement.setAttribute('data-theme', savedTheme)
   }, [])
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light'
-    setTheme(newTheme)
-    localStorage.setItem('theme', newTheme)
-    document.documentElement.setAttribute('data-theme', newTheme)
-  }
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang)
@@ -104,7 +91,7 @@ function Settings() {
 
   const handleClearCache = () => {
     if (window.confirm('Êtes-vous sûr de vouloir vider le cache ? Cela peut améliorer les performances.')) {
-      const keysToKeep = ['theme', 'language', 'notificationPrefs']
+      const keysToKeep = ['language', 'notificationPrefs']
       const allKeys = Object.keys(localStorage)
       
       allKeys.forEach(key => {
@@ -145,55 +132,6 @@ function Settings() {
       </div>
 
       <div className="page-content">
-        {/* Apparence */}
-        <div className="section">
-          <h2 className="section-title">Apparence</h2>
-          
-          <div style={{
-            background: 'var(--surface)',
-            borderRadius: '16px',
-            padding: '20px'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>
-                  Mode {theme === 'light' ? 'clair' : 'sombre'}
-                </h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                  Changer l'apparence de l'application
-                </p>
-              </div>
-              <button
-                onClick={toggleTheme}
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  border: '2px solid var(--border-light)',
-                  background: 'var(--bg-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  flexShrink: 0
-                }}
-              >
-                {theme === 'light' ? (
-                  <Sun size={24} style={{ color: '#FDB813' }} />
-                ) : (
-                  <Moon size={24} style={{ color: 'var(--primary)' }} />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Langue */}
         <div className="section">
           <h2 className="section-title">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Plus, Trash2, Settings } from 'lucide-react'
+import { Plus, Trash2, Settings, ChefHat } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import AddFoodModal from '../components/AddFoodModal'
 import EditMacrosModal from '../components/EditMacrosModal'
 import { createMeal, addFoodToMeal, removeFoodFromMeal } from '../services/mealService'
@@ -7,6 +8,7 @@ import { useNutrition } from '../context/NutritionContext'
 import { useAuth } from '../context/AuthContext'
 
 function Nutrition() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const {
     meals,
@@ -77,7 +79,7 @@ function Nutrition() {
       <div className="section">
         <div className="section-header">
           <h2 className="section-title">{emoji} {title}</h2>
-          <button 
+          <button
             onClick={() => openModalForMeal(mealType)}
             style={{
               background: 'var(--primary)',
@@ -105,8 +107,8 @@ function Nutrition() {
             <div className="card-body" style={{ padding: '0' }}>
               {mealData.map((meal) => (
                 meal.meal_foods.map((mealFood) => (
-                  <div 
-                    key={mealFood.id} 
+                  <div
+                    key={mealFood.id}
                     className="list-item"
                     style={{
                       position: 'relative',
@@ -129,23 +131,23 @@ function Nutrition() {
                       </div>
                     </div>
 
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px' 
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
                     }}>
                       <div style={{ textAlign: 'right' }}>
                         <div className="list-item-value">
                           {Math.round((mealFood.foods.calories * mealFood.quantity) / mealFood.foods.serving_size)} kcal
                         </div>
-                        <div style={{ 
-                          fontSize: '11px', 
+                        <div style={{
+                          fontSize: '11px',
                           color: 'var(--text-secondary)',
                           fontWeight: '600',
                           marginTop: '2px'
                         }}>
-                          P: {Math.round((mealFood.foods.proteins * mealFood.quantity) / mealFood.foods.serving_size)}g • 
-                          G: {Math.round((mealFood.foods.carbs * mealFood.quantity) / mealFood.foods.serving_size)}g • 
+                          P: {Math.round((mealFood.foods.proteins * mealFood.quantity) / mealFood.foods.serving_size)}g •
+                          G: {Math.round((mealFood.foods.carbs * mealFood.quantity) / mealFood.foods.serving_size)}g •
                           L: {Math.round((mealFood.foods.fats * mealFood.quantity) / mealFood.foods.serving_size)}g
                         </div>
                       </div>
@@ -213,8 +215,8 @@ function Nutrition() {
   if (loading) {
     return (
       <div className="page">
-        <div style={{ 
-          textAlign: 'center', 
+        <div style={{
+          textAlign: 'center',
           padding: '40px',
           display: 'flex',
           flexDirection: 'column',
@@ -240,8 +242,34 @@ function Nutrition() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1>Nutrition</h1>
-        <p className="subtitle">Suivez votre alimentation quotidienne</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1>Nutrition</h1>
+            <p className="subtitle">Suivez votre alimentation quotidienne</p>
+          </div>
+          <button
+            onClick={() => navigate('/recipes')}
+            style={{
+              background: 'var(--surface)',
+              border: '2px solid var(--border-light)',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px',
+              fontWeight: '700',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+          >
+            <ChefHat size={16} />
+            Recettes
+          </button>
+        </div>
       </div>
 
       <div className="page-content">
@@ -254,15 +282,15 @@ function Nutrition() {
           </div>
           <div style={{ marginTop: '24px' }}>
             <div className="progress-bar" style={{ background: 'rgba(255,255,255,0.2)' }}>
-              <div className="progress-fill" style={{ 
+              <div className="progress-fill" style={{
                 width: `${calculateProgress()}%`,
                 background: 'rgba(255,255,255,0.9)',
                 transition: 'width 0.5s ease'
               }}></div>
             </div>
-            <div style={{ 
-              marginTop: '12px', 
-              fontSize: '14px', 
+            <div style={{
+              marginTop: '12px',
+              fontSize: '14px',
               opacity: '0.9',
               fontWeight: '600'
             }}>
@@ -278,7 +306,7 @@ function Nutrition() {
         <div className="section">
           <div className="section-header">
             <h2 className="section-title">Macronutriments</h2>
-            <button 
+            <button
               onClick={() => setIsMacrosModalOpen(true)}
               style={{
                 background: 'var(--surface)',
