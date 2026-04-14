@@ -9,6 +9,16 @@ export const getMealsByDate = async (userId, date) => {
       meal_foods (
         *,
         foods (*)
+      ),
+      meal_recipes (
+        *,
+        recipes (
+          *,
+          recipe_ingredients (
+            *,
+            foods (*)
+          )
+        )
       )
     `)
     .eq('user_id', userId)
@@ -61,6 +71,34 @@ export const removeFoodFromMeal = async (mealFoodId) => {
   if (error) throw error
 }
 
+// Ajouter une recette à un repas (stockée comme entrée unique)
+export const addRecipeEntryToMeal = async (mealId, recipeId, servings = 1) => {
+  const { data, error } = await supabase
+    .from('meal_recipes')
+    .insert([{ meal_id: mealId, recipe_id: recipeId, servings }])
+    .select(`
+      *,
+      recipes (
+        *,
+        recipe_ingredients (*, foods (*))
+      )
+    `)
+    .single()
+  
+  if (error) throw error
+  return data
+}
+
+// Retirer une recette d'un repas
+export const removeRecipeFromMeal = async (mealRecipeId) => {
+  const { error } = await supabase
+    .from('meal_recipes')
+    .delete()
+    .eq('id', mealRecipeId)
+  
+  if (error) throw error
+}
+
 // Mettre à jour la quantité d'un aliment dans un repas
 export const updateMealFoodQuantity = async (mealFoodId, quantity) => {
   const { data, error } = await supabase
@@ -84,27 +122,47 @@ export const deleteMeal = async (mealId) => {
   if (error) throw error
 }
 
-// Calculer les totaux nutritionnels d'un repas
+// Calculer les totaux nutritionnels d'un repas (aliments + recettes)
 export const calculateMealNutrition = (meal) => {
-  if (!meal?.meal_foods) return {
-    calories: 0,
-    proteins: 0,
-    carbs: 0,
-    fats: 0
-  }
+  const base = { calories: 0, proteins: 0, carbs: 0, fats: 0 }
 
-  return meal.meal_foods.reduce((totals, mealFood) => {
+  const fromFoods = (meal?.meal_foods || []).reduce((totals, mealFood) => {
     const food = mealFood.foods
-    const quantity = mealFood.quantity
-    const servingRatio = quantity / food.serving_size
+    const ratio = mealFood.quantity / food.serving_size
+    return {
+      calories: totals.calories + food.calories * ratio,
+      proteins: totals.proteins + food.proteins * ratio,
+      carbs: totals.carbs + food.carbs * ratio,
+      fats: totals.fats + food.fats * ratio
+    }
+  }, base)
+
+  const fromRecipes = (meal?.meal_recipes || []).reduce((totals, mealRecipe) => {
+    const recipe = mealRecipe.recipes
+    const servings = mealRecipe.servings || 1
+    const portions = recipe.servings || 1
+    const ratio = servings / portions
+
+    const recipeTotal = (recipe?.recipe_ingredients || []).reduce((acc, ing) => {
+      const food = ing.foods
+      const r = ing.quantity / food.serving_size
+      return {
+        calories: acc.calories + food.calories * r,
+        proteins: acc.proteins + food.proteins * r,
+        carbs: acc.carbs + food.carbs * r,
+        fats: acc.fats + food.fats * r
+      }
+    }, { calories: 0, proteins: 0, carbs: 0, fats: 0 })
 
     return {
-      calories: totals.calories + (food.calories * servingRatio),
-      proteins: totals.proteins + (food.proteins * servingRatio),
-      carbs: totals.carbs + (food.carbs * servingRatio),
-      fats: totals.fats + (food.fats * servingRatio)
+      calories: totals.calories + recipeTotal.calories * ratio,
+      proteins: totals.proteins + recipeTotal.proteins * ratio,
+      carbs: totals.carbs + recipeTotal.carbs * ratio,
+      fats: totals.fats + recipeTotal.fats * ratio
     }
-  }, { calories: 0, proteins: 0, carbs: 0, fats: 0 })
+  }, fromFoods)
+
+  return fromRecipes
 }
 
 // Calculer les totaux nutritionnels de la journée

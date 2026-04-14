@@ -3,7 +3,8 @@ import { Plus, Trash2, Settings, ChefHat } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import AddFoodModal from '../components/AddFoodModal'
 import EditMacrosModal from '../components/EditMacrosModal'
-import { createMeal, addFoodToMeal, removeFoodFromMeal } from '../services/mealService'
+import { createMeal, addFoodToMeal, removeFoodFromMeal, addRecipeEntryToMeal, removeRecipeFromMeal } from '../services/mealService'
+import { calculateRecipeNutrition } from '../services/recipeService'
 import { useNutrition } from '../context/NutritionContext'
 import { useAuth } from '../context/AuthContext'
 
@@ -46,6 +47,19 @@ function Nutrition() {
     }
   }
 
+  const handleAddRecipe = async (recipe) => {
+    try {
+      let meal = meals.find(m => m.meal_type === selectedMealType)
+      if (!meal) {
+        meal = await createMeal(user.id, selectedMealType, today)
+      }
+      await addRecipeEntryToMeal(meal.id, recipe.id, 1)
+      await refreshNutrition()
+    } catch (error) {
+      console.error('Erreur ajout recette:', error)
+    }
+  }
+
   const handleDeleteFood = async (mealFoodId) => {
     try {
       setDeletingItem(mealFoodId)
@@ -53,6 +67,18 @@ function Nutrition() {
       await refreshNutrition()
     } catch (error) {
       console.error('Erreur suppression aliment:', error)
+    } finally {
+      setDeletingItem(null)
+    }
+  }
+
+  const handleDeleteRecipe = async (mealRecipeId) => {
+    try {
+      setDeletingItem(mealRecipeId)
+      await removeRecipeFromMeal(mealRecipeId)
+      await refreshNutrition()
+    } catch (error) {
+      console.error('Erreur suppression recette:', error)
     } finally {
       setDeletingItem(null)
     }
@@ -73,7 +99,9 @@ function Nutrition() {
 
   const MealSection = ({ title, emoji, mealType }) => {
     const mealData = getMealsByType(mealType)
-    const hasMeals = mealData.length > 0 && mealData.some(m => m.meal_foods.length > 0)
+    const hasMeals = mealData.length > 0 && mealData.some(m =>
+      m.meal_foods.length > 0 || (m.meal_recipes && m.meal_recipes.length > 0)
+    )
 
     return (
       <div className="section">
@@ -106,91 +134,137 @@ function Nutrition() {
           <div className="card">
             <div className="card-body" style={{ padding: '0' }}>
               {mealData.map((meal) => (
-                meal.meal_foods.map((mealFood) => (
-                  <div
-                    key={mealFood.id}
-                    className="list-item"
-                    style={{
-                      position: 'relative',
-                      transition: 'all 0.2s ease',
-                      opacity: deletingItem === mealFood.id ? 0.5 : 1
-                    }}
-                  >
-                    <div className="list-item-left" style={{ flex: 1 }}>
-                      <div className="list-item-info">
-                        <h3>{mealFood.foods.name}</h3>
-                        <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span>{mealFood.quantity}{mealFood.foods.serving_unit}</span>
-                          {mealFood.foods.brand && (
-                            <>
-                              <span style={{ opacity: 0.5 }}>•</span>
-                              <span>{mealFood.foods.brand}</span>
-                            </>
+                <>
+                  {/* Aliments individuels */}
+                  {meal.meal_foods.map((mealFood) => (
+                    <div
+                      key={`food-${mealFood.id}`}
+                      className="list-item"
+                      style={{
+                        position: 'relative',
+                        transition: 'all 0.2s ease',
+                        opacity: deletingItem === mealFood.id ? 0.5 : 1
+                      }}
+                    >
+                      <div className="list-item-left" style={{ flex: 1 }}>
+                        <div className="list-item-info">
+                          <h3>{mealFood.foods.name}</h3>
+                          <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{mealFood.quantity}{mealFood.foods.serving_unit}</span>
+                            {mealFood.foods.brand && (
+                              <>
+                                <span style={{ opacity: 0.5 }}>•</span>
+                                <span>{mealFood.foods.brand}</span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div className="list-item-value">
+                            {Math.round((mealFood.foods.calories * mealFood.quantity) / mealFood.foods.serving_size)} kcal
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>
+                            P: {Math.round((mealFood.foods.proteins * mealFood.quantity) / mealFood.foods.serving_size)}g •
+                            G: {Math.round((mealFood.foods.carbs * mealFood.quantity) / mealFood.foods.serving_size)}g •
+                            L: {Math.round((mealFood.foods.fats * mealFood.quantity) / mealFood.foods.serving_size)}g
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteFood(mealFood.id)}
+                          disabled={deletingItem === mealFood.id}
+                          style={{
+                            background: 'transparent', border: 'none', color: '#EF4444',
+                            cursor: 'pointer', padding: '8px', borderRadius: '8px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            opacity: deletingItem === mealFood.id ? 0.5 : 1
+                          }}
+                          onMouseOver={(e) => { if (deletingItem !== mealFood.id) e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          {deletingItem === mealFood.id ? (
+                            <div style={{ width: '20px', height: '20px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                          ) : (
+                            <Trash2 size={18} />
                           )}
-                        </p>
+                        </button>
                       </div>
                     </div>
+                  ))}
 
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px'
-                    }}>
-                      <div style={{ textAlign: 'right' }}>
-                        <div className="list-item-value">
-                          {Math.round((mealFood.foods.calories * mealFood.quantity) / mealFood.foods.serving_size)} kcal
-                        </div>
-                        <div style={{
-                          fontSize: '11px',
-                          color: 'var(--text-secondary)',
-                          fontWeight: '600',
-                          marginTop: '2px'
-                        }}>
-                          P: {Math.round((mealFood.foods.proteins * mealFood.quantity) / mealFood.foods.serving_size)}g •
-                          G: {Math.round((mealFood.foods.carbs * mealFood.quantity) / mealFood.foods.serving_size)}g •
-                          L: {Math.round((mealFood.foods.fats * mealFood.quantity) / mealFood.foods.serving_size)}g
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteFood(mealFood.id)}
-                        disabled={deletingItem === mealFood.id}
+                  {/* Recettes */}
+                  {(meal.meal_recipes || []).map((mealRecipe) => {
+                    const recipe = mealRecipe.recipes
+                    const nutrition = calculateRecipeNutrition(recipe, mealRecipe.servings)
+                    return (
+                      <div
+                        key={`recipe-${mealRecipe.id}`}
+                        className="list-item"
                         style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#EF4444',
-                          cursor: 'pointer',
-                          padding: '8px',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          position: 'relative',
                           transition: 'all 0.2s ease',
-                          opacity: deletingItem === mealFood.id ? 0.5 : 1
+                          opacity: deletingItem === mealRecipe.id ? 0.5 : 1,
+                          background: 'rgba(255,107,53,0.03)'
                         }}
-                        onMouseOver={(e) => {
-                          if (deletingItem !== mealFood.id) {
-                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
-                          }
-                        }}
-                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        {deletingItem === mealFood.id ? (
-                          <div style={{
-                            width: '20px',
-                            height: '20px',
-                            border: '2px solid currentColor',
-                            borderTopColor: 'transparent',
-                            borderRadius: '50%',
-                            animation: 'spin 0.6s linear infinite'
-                          }} />
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ))
+                        <div className="list-item-left" style={{ flex: 1 }}>
+                          <div className="list-item-info">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <ChefHat size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                              <h3 style={{ margin: 0 }}>{recipe.name}</h3>
+                            </div>
+                            <p style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                              <span>{mealRecipe.servings} portion{mealRecipe.servings > 1 ? 's' : ''}</span>
+                              {recipe.description && (
+                                <>
+                                  <span style={{ opacity: 0.4 }}>•</span>
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{recipe.description}</span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div className="list-item-value">
+                              {Math.round(nutrition.calories)} kcal
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>
+                              P: {Math.round(nutrition.proteins)}g •
+                              G: {Math.round(nutrition.carbs)}g •
+                              L: {Math.round(nutrition.fats)}g
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleDeleteRecipe(mealRecipe.id)}
+                            disabled={deletingItem === mealRecipe.id}
+                            style={{
+                              background: 'transparent', border: 'none', color: '#EF4444',
+                              cursor: 'pointer', padding: '8px', borderRadius: '8px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.2s ease',
+                              opacity: deletingItem === mealRecipe.id ? 0.5 : 1
+                            }}
+                            onMouseOver={(e) => { if (deletingItem !== mealRecipe.id) e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            {deletingItem === mealRecipe.id ? (
+                              <div style={{ width: '20px', height: '20px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                            ) : (
+                              <Trash2 size={18} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </>
               ))}
             </div>
           </div>
@@ -377,6 +451,8 @@ function Nutrition() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAddFood={handleAddFood}
+        onAddRecipe={handleAddRecipe}
+        userId={user?.id}
       />
 
       <EditMacrosModal
