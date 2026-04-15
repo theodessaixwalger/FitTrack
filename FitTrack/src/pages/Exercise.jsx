@@ -18,6 +18,7 @@ import {
 import AddExerciseModal from "../components/AddExerciseModal";
 import EditExerciseModal from "../components/EditExerciseModal";
 import ExerciseHistoryModal from "../components/ExerciseHistoryModal";
+import Stopwatch from "../components/Stopwatch";
 
 const DAYS = [
   "Lundi",
@@ -1000,6 +1001,9 @@ function Training() {
         userId={userId}
         exerciseName={selectedExerciseForHistory}
       />
+
+      {/* Chronomètre flottant */}
+      <Stopwatch />
     </div>
   );
 }

@@ -8,7 +8,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
   const [selectedExercise, setSelectedExercise] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState('all')
-  const [restSeconds, setRestSeconds] = useState(60)
+  const [restSeconds, setRestSeconds] = useState('60')
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -83,7 +83,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
       await onAddExercise(
         selectedExercise.id,
         validSets, // Nouveau format : tableau de sets
-        restSeconds,
+        Number(restSeconds) || 0,
         notes
       )
       resetForm()
@@ -127,7 +127,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
     setSearchTerm('')
     setSelectedMuscleGroup('all')
     setSets([{ reps: '', weight: '', weight_unit: 'kg' }])
-    setRestSeconds(60)
+    setRestSeconds('60')
     setNotes('')
     setShowCreateForm(false)
     setNewExercise({
@@ -662,11 +662,10 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                     <input
                       type="number"
                       value={restSeconds}
-                      onChange={(e) => setRestSeconds(Number(e.target.value))}
+                      onChange={(e) => setRestSeconds(e.target.value)}
                       min="0"
                       step="15"
                       className="input"
-                      required
                     />
                   </div>
 
