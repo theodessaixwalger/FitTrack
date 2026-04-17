@@ -47,6 +47,7 @@ function Training() {
   const [showHistory, setShowHistory] = useState(false);
   const [selectedExerciseForHistory, setSelectedExerciseForHistory] = useState(null);
   const [expandedDay, setExpandedDay] = useState(null);
+  const [expandedExercise, setExpandedExercise] = useState(null);
 
   // États pour le modal d'édition
   const [showEditModal, setShowEditModal] = useState(false);
@@ -373,82 +374,122 @@ function Training() {
             {hasExercises ? (
               <div className="card">
                 <div className="card-body" style={{ padding: "0" }}>
-                  {day.exercises.map((exercise, index) => (
-                    <div
-                      key={exercise.id}
-                      className="list-item"
-                      style={{
-                        position: "relative",
-                        transition: "all 0.2s ease",
-                        opacity: deletingExercise === exercise.id ? 0.5 : 1,
-                        padding: "16px 20px",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                        {/* Gauche : Numéro + Info */}
-                        <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1, minWidth: 0, overflow: "hidden" }}>
+                  {day.exercises.map((exercise, index) => {
+                    const isExpanded = expandedExercise === exercise.id
+                    const sets = Array.isArray(exercise.sets) ? exercise.sets : []
+                    const isCardio = sets.length > 0 && sets[0]?.weight_unit === 'sec'
+
+                    // Résumé compact
+                    const summary = isCardio
+                      ? `❤️ ${sets.length} intervalle${sets.length > 1 ? 's' : ''}`
+                      : sets.length > 0
+                        ? `${sets.length} série${sets.length > 1 ? 's' : ''}${sets[0]?.weight ? ` · ${parseFloat(sets[0].weight) % 1 === 0 ? parseFloat(sets[0].weight) : parseFloat(sets[0].weight).toFixed(2)} ${sets[0].weight_unit}` : ''}`
+                        : 'Aucune série'
+
+                    const formatDuration = (secs) => {
+                      const m = Math.floor(secs / 60)
+                      const s = secs % 60
+                      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+                    }
+
+                    return (
+                      <div
+                        key={exercise.id}
+                        style={{
+                          position: "relative",
+                          transition: "opacity 0.2s ease",
+                          opacity: deletingExercise === exercise.id ? 0.5 : 1,
+                          borderBottom: index < day.exercises.length - 1 ? "1px solid var(--border-light)" : "none",
+                        }}
+                      >
+                        {/* Ligne de titre — cliquable */}
+                        <div
+                          onClick={() => setExpandedExercise(isExpanded ? null : exercise.id)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "14px 20px",
+                            cursor: "pointer",
+                            userSelect: "none",
+                          }}
+                        >
                           {/* Numéro */}
-                          <div
-                            style={{
-                              width: "32px",
-                              height: "32px",
-                              borderRadius: "8px",
-                              background: "var(--primary)",
-                              color: "white",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "14px",
-                              fontWeight: "700",
-                              flexShrink: 0,
-                            }}
-                          >
+                          <div style={{
+                            width: "28px",
+                            height: "28px",
+                            borderRadius: "8px",
+                            background: "var(--primary)",
+                            color: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "13px",
+                            fontWeight: "700",
+                            flexShrink: 0,
+                          }}>
                             {index + 1}
                           </div>
 
-                          {/* Info exercice */}
-                          <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                            <h3 style={{
-                              margin: 0,
-                              fontSize: "16px",
+                          {/* Nom + résumé */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              fontSize: "15px",
                               fontWeight: "700",
-                              marginBottom: "8px",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
-                              whiteSpace: "nowrap"
+                              whiteSpace: "nowrap",
                             }}>
                               {exercise.exercise_name}
-                            </h3>
+                            </div>
+                            <div style={{
+                              fontSize: "12px",
+                              color: isCardio ? "#FF6B35" : "var(--text-secondary)",
+                              fontWeight: "600",
+                              marginTop: "2px",
+                            }}>
+                              {summary}
+                            </div>
+                          </div>
 
-                            {/* Afficher les sets individuels si disponibles */}
-                            {Array.isArray(exercise.sets) && exercise.sets.length > 0 ? (
-                              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                {exercise.sets.map((set, setIndex) => {
-                                  const isCardio = set.weight_unit === 'sec'
-                                  const formatDuration = (secs) => {
-                                    const m = Math.floor(secs / 60)
-                                    const s = secs % 60
-                                    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
-                                  }
+                          {/* Chevron */}
+                          <svg
+                            width="18" height="18" viewBox="0 0 24 24"
+                            fill="none" stroke="var(--text-secondary)" strokeWidth="2"
+                            style={{
+                              flexShrink: 0,
+                              transition: "transform 0.2s ease",
+                              transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                            }}
+                          >
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </div>
+
+                        {/* Contenu déroulé */}
+                        {isExpanded && (
+                          <div style={{
+                            padding: "0 20px 16px 60px",
+                            animation: "fadeInUp 0.15s ease-out",
+                          }}>
+                            {/* Sets */}
+                            {sets.length > 0 ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "14px" }}>
+                                {sets.map((set, setIndex) => {
+                                  const sc = set.weight_unit === 'sec'
                                   return (
                                     <div key={set.id} style={{
                                       fontSize: "13px",
                                       color: "var(--text-secondary)",
                                       display: "flex",
                                       alignItems: "center",
-                                      gap: "8px"
+                                      gap: "8px",
                                     }}>
-                                      <span style={{
-                                        fontWeight: "600",
-                                        color: "var(--text-primary)",
-                                        minWidth: "50px"
-                                      }}>
-                                        {isCardio ? `❤️ ${setIndex + 1}:` : `Set ${set.set_number}:`}
+                                      <span style={{ fontWeight: "600", color: "var(--text-primary)", minWidth: "54px" }}>
+                                        {sc ? `❤️ ${setIndex+1}:` : `Set ${set.set_number}:`}
                                       </span>
-                                      {isCardio ? (
-                                        <span style={{ fontWeight: "700", color: "#FF6B35" }}>
-                                          {formatDuration(set.reps)}
-                                        </span>
+                                      {sc ? (
+                                        <span style={{ fontWeight: "700", color: "#FF6B35" }}>{formatDuration(set.reps)}</span>
                                       ) : (
                                         <>
                                           <span style={{ fontWeight: "600" }}>{set.reps} reps</span>
@@ -456,10 +497,7 @@ function Training() {
                                             <>
                                               <span style={{ opacity: 0.5 }}>×</span>
                                               <span style={{ color: "var(--primary)", fontWeight: "700" }}>
-                                                {parseFloat(set.weight) % 1 === 0
-                                                  ? parseFloat(set.weight)
-                                                  : parseFloat(set.weight).toFixed(2)
-                                                } {set.weight_unit}
+                                                {parseFloat(set.weight) % 1 === 0 ? parseFloat(set.weight) : parseFloat(set.weight).toFixed(2)} {set.weight_unit}
                                               </span>
                                             </>
                                           )}
@@ -470,127 +508,50 @@ function Training() {
                                 })}
                               </div>
                             ) : (
-                              // Pas de sets enregistrés
-                              <div style={{
-                                fontSize: "13px",
-                                color: "var(--text-secondary)",
-                                fontStyle: "italic"
-                              }}>
+                              <div style={{ fontSize: "13px", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "14px" }}>
                                 Aucune série enregistrée
                               </div>
                             )}
+
+                            {/* Actions */}
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {/* Historique */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSelectedExerciseForHistory(exercise.exercise_name); setShowHistory(true); }}
+                                style={{ background: "transparent", border: "none", color: "var(--primary)", cursor: "pointer", padding: "6px 10px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: "600" }}
+                                title="Voir l'historique"
+                              >
+                                <BarChart3 size={15} /> Historique
+                              </button>
+
+                              {/* Modifier */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditingExercise(exercise); setShowEditModal(true); }}
+                                style={{ background: "var(--surface-elevated)", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "6px 10px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: "600" }}
+                                title="Modifier"
+                              >
+                                <Edit2 size={15} /> Modifier
+                              </button>
+
+                              {/* Supprimer */}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteExercise(exercise.id); }}
+                                disabled={deletingExercise === exercise.id}
+                                style={{ background: "transparent", border: "none", color: "#EF4444", cursor: "pointer", padding: "6px 10px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: "600", opacity: deletingExercise === exercise.id ? 0.5 : 1 }}
+                                title="Supprimer"
+                              >
+                                {deletingExercise === exercise.id
+                                  ? <div style={{ width: "15px", height: "15px", border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+                                  : <Trash2 size={15} />
+                                }
+                                Supprimer
+                              </button>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Droite : Actions */}
-                        <div style={{ display: 'flex', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
-                          {/* Bouton Historique */}
-                          <button
-                            onClick={() => {
-                              setSelectedExerciseForHistory(exercise.exercise_name);
-                              setShowHistory(true);
-                            }}
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              color: "var(--primary)",
-                              cursor: "pointer",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = "var(--primary-bg)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "transparent";
-                            }}
-                            title="Voir l'historique"
-                          >
-                            <BarChart3 size={18} />
-                          </button>
-
-                          {/* Bouton Modifier */}
-                          <button
-                            onClick={() => {
-                              setEditingExercise(exercise);
-                              setShowEditModal(true);
-                            }}
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              color: "var(--text-secondary)",
-                              cursor: "pointer",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = "var(--surface-elevated)";
-                              e.currentTarget.style.color = "var(--text-primary)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "transparent";
-                              e.currentTarget.style.color = "var(--text-secondary)";
-                            }}
-                            title="Modifier l'exercice"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-
-                          {/* Bouton Supprimer */}
-                          <button
-                            onClick={() => handleDeleteExercise(exercise.id)}
-                            disabled={deletingExercise === exercise.id}
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              color: "#EF4444",
-                              cursor: "pointer",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              transition: "all 0.2s ease",
-                              opacity: deletingExercise === exercise.id ? 0.5 : 1,
-                            }}
-                            onMouseOver={(e) => {
-                              if (deletingExercise !== exercise.id) {
-                                e.currentTarget.style.background =
-                                  "rgba(239, 68, 68, 0.1)";
-                              }
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "transparent";
-                            }}
-                            title="Supprimer"
-                          >
-                            {deletingExercise === exercise.id ? (
-                              <div
-                                style={{
-                                  width: "20px",
-                                  height: "20px",
-                                  border: "2px solid currentColor",
-                                  borderTopColor: "transparent",
-                                  borderRadius: "50%",
-                                  animation: "spin 0.6s linear infinite",
-                                }}
-                              />
-                            ) : (
-                              <Trash2 size={18} />
-                            )}
-                          </button>
-                        </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ) : (

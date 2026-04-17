@@ -251,7 +251,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                 {/* Contrôle principal */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                   <button
-                    onClick={() => setQuantity(q => String(Math.max(1, (parseFloat(q) || 0) - 10)))}
+                    onClick={() => setQuantity(q => String(Math.max(0.1, Math.round(((parseFloat(q) || 0) - 5) * 10) / 10)))}
                     style={{
                       width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
                       border: 'none', background: 'var(--surface)',
@@ -267,7 +267,9 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   <div style={{ flex: 1, position: 'relative' }}>
                     <input
                       type="number"
-                      min="1"
+                      min="0.1"
+                      step="any"
+                      inputMode="decimal"
                       value={quantity}
                       onChange={e => setQuantity(e.target.value)}
                       autoFocus
@@ -292,7 +294,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   </div>
 
                   <button
-                    onClick={() => setQuantity(q => String((parseFloat(q) || 0) + 10))}
+                    onClick={() => setQuantity(q => String(Math.round(((parseFloat(q) || 0) + 5) * 10) / 10))}
                     style={{
                       width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
                       border: 'none',
