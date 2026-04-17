@@ -423,40 +423,51 @@ function Training() {
                             {/* Afficher les sets individuels si disponibles */}
                             {Array.isArray(exercise.sets) && exercise.sets.length > 0 ? (
                               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                {exercise.sets.map((set, setIndex) => (
-                                  <div key={set.id} style={{
-                                    fontSize: "13px",
-                                    color: "var(--text-secondary)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px"
-                                  }}>
-                                    <span style={{
-                                      fontWeight: "600",
-                                      color: "var(--text-primary)",
-                                      minWidth: "50px"
+                                {exercise.sets.map((set, setIndex) => {
+                                  const isCardio = set.weight_unit === 'sec'
+                                  const formatDuration = (secs) => {
+                                    const m = Math.floor(secs / 60)
+                                    const s = secs % 60
+                                    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+                                  }
+                                  return (
+                                    <div key={set.id} style={{
+                                      fontSize: "13px",
+                                      color: "var(--text-secondary)",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "8px"
                                     }}>
-                                      Set {set.set_number}:
-                                    </span>
-                                    <span style={{ fontWeight: "600" }}>
-                                      {set.reps} reps
-                                    </span>
-                                    {set.weight && (
-                                      <>
-                                        <span style={{ opacity: 0.5 }}>×</span>
-                                        <span style={{
-                                          color: "var(--primary)",
-                                          fontWeight: "700"
-                                        }}>
-                                          {parseFloat(set.weight) % 1 === 0
-                                            ? parseFloat(set.weight)
-                                            : parseFloat(set.weight).toFixed(2)
-                                          } {set.weight_unit}
+                                      <span style={{
+                                        fontWeight: "600",
+                                        color: "var(--text-primary)",
+                                        minWidth: "50px"
+                                      }}>
+                                        {isCardio ? `❤️ ${setIndex + 1}:` : `Set ${set.set_number}:`}
+                                      </span>
+                                      {isCardio ? (
+                                        <span style={{ fontWeight: "700", color: "#FF6B35" }}>
+                                          {formatDuration(set.reps)}
                                         </span>
-                                      </>
-                                    )}
-                                  </div>
-                                ))}
+                                      ) : (
+                                        <>
+                                          <span style={{ fontWeight: "600" }}>{set.reps} reps</span>
+                                          {set.weight && (
+                                            <>
+                                              <span style={{ opacity: 0.5 }}>×</span>
+                                              <span style={{ color: "var(--primary)", fontWeight: "700" }}>
+                                                {parseFloat(set.weight) % 1 === 0
+                                                  ? parseFloat(set.weight)
+                                                  : parseFloat(set.weight).toFixed(2)
+                                                } {set.weight_unit}
+                                              </span>
+                                            </>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  )
+                                })}
                               </div>
                             ) : (
                               // Pas de sets enregistrés

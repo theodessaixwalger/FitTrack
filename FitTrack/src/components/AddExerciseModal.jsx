@@ -14,8 +14,12 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
   const [loading, setLoading] = useState(true)
   
   // Nouveau format : tableau de sets individuels
+  const [exerciseMode, setExerciseMode] = useState('musculation') // 'musculation' | 'cardio'
   const [sets, setSets] = useState([
     { reps: '', weight: '', weight_unit: 'kg' }
+  ])
+  const [cardioSets, setCardioSets] = useState([
+    { duration_min: '', duration_sec: '' }
   ])
   
   // États pour créer un nouvel exercice
@@ -27,7 +31,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
     description: ''
   })
 
-  const muscleGroups = ['all', 'Pectoraux', 'Dos', 'Jambes', 'Épaules', 'Biceps', 'Triceps', 'Abdominaux']
+  const muscleGroups = ['all', 'Pectoraux', 'Dos', 'Jambes', 'Épaules', 'Biceps', 'Triceps', 'Abdominaux', 'Cardio']
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -70,6 +74,34 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!selectedExercise) return
+
+    // Valider selon le mode
+    if (exerciseMode === 'cardio') {
+      const validCardio = cardioSets.filter(s => (Number(s.duration_min) > 0 || Number(s.duration_sec) > 0))
+      if (validCardio.length === 0) {
+        alert('Veuillez renseigner au moins une durée')
+        return
+      }
+      const cardioData = validCardio.map(s => {
+        const duration_seconds = (Number(s.duration_min) || 0) * 60 + (Number(s.duration_sec) || 0)
+        return {
+          reps: duration_seconds,     // durée en secondes stockée dans reps
+          weight: null,
+          weight_unit: 'sec',         // flag cardio : weight_unit = 'sec'
+        }
+      })
+      setIsSubmitting(true)
+      try {
+        await onAddExercise(selectedExercise.id, cardioData, Number(restSeconds) || 0, notes)
+        resetForm()
+        onClose()
+      } catch (error) {
+        console.error('Erreur ajout exercice cardio:', error)
+      } finally {
+        setIsSubmitting(false)
+      }
+      return
+    }
 
     // Valider que tous les sets ont des reps
     const validSets = sets.filter(set => set.reps && set.reps > 0)
@@ -126,7 +158,9 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
     setSelectedExercise(null)
     setSearchTerm('')
     setSelectedMuscleGroup('all')
+    setExerciseMode('musculation')
     setSets([{ reps: '', weight: '', weight_unit: 'kg' }])
+    setCardioSets([{ duration_min: '', duration_sec: '' }])
     setRestSeconds('60')
     setNotes('')
     setShowCreateForm(false)
@@ -138,15 +172,26 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
     })
   }
   
-  // Fonctions pour gérer les sets
   const addSet = () => {
-    setSets([...sets, { reps: '', weight: '', weight_unit: 'kg' }])
+    if (exerciseMode === 'cardio') {
+      setCardioSets([...cardioSets, { duration_min: '', duration_sec: '' }])
+    } else {
+      setSets([...sets, { reps: '', weight: '', weight_unit: 'kg' }])
+    }
   }
   
   const removeSet = (index) => {
-    if (sets.length > 1) {
-      setSets(sets.filter((_, i) => i !== index))
+    if (exerciseMode === 'cardio') {
+      if (cardioSets.length > 1) setCardioSets(cardioSets.filter((_, i) => i !== index))
+    } else {
+      if (sets.length > 1) setSets(sets.filter((_, i) => i !== index))
     }
+  }
+  
+  const updateCardioSet = (index, field, value) => {
+    const updated = [...cardioSets]
+    updated[index][field] = value
+    setCardioSets(updated)
   }
   
   const updateSet = (index, field, value) => {
@@ -495,13 +540,46 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                     </div>
                   </div>
 
+                  {/* Toggle Musculation / Cardio */}
+                  <div style={{
+                    display: 'flex',
+                    background: 'var(--surface-elevated)',
+                    borderRadius: '12px',
+                    padding: '4px',
+                    marginBottom: '20px',
+                    gap: '4px'
+                  }}>
+                    {[{ id: 'musculation', label: '🏋️ Musculation' }, { id: 'cardio', label: '❤️ Cardio' }].map(mode => (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setExerciseMode(mode.id)}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: '10px',
+                          border: 'none',
+                          background: exerciseMode === mode.id ? 'var(--primary)' : 'transparent',
+                          color: exerciseMode === mode.id ? 'white' : 'var(--text-secondary)',
+                          fontSize: '14px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+
                   {/* Configuration */}
                   <div className="form-group">
                     <label style={{ marginBottom: '12px', display: 'block', fontWeight: '600' }}>
-                      Séries ({sets.length})
+                      {exerciseMode === 'cardio' ? `Intervalles (${cardioSets.length})` : `Séries (${sets.length})`}
                     </label>
                     
-                    {sets.map((set, index) => (
+                    {/* Sets Musculation */}
+                    {exerciseMode === 'musculation' && sets.map((set, index) => (
                       <div key={index} style={{ 
                         display: 'flex', 
                         flexDirection: 'column',
@@ -512,16 +590,9 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                         borderRadius: '12px',
                         border: '1px solid var(--border)'
                       }}>
-                        {/* En-tête avec numéro et bouton supprimer */}
+                        {/* En-tête */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ 
-                            fontWeight: '700',
-                            color: 'var(--primary)',
-                            fontSize: '16px'
-                          }}>
-                            Série #{index + 1}
-                          </span>
-                          
+                          <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '16px' }}>Série #{index + 1}</span>
                           <button
                             type="button"
                             onClick={() => removeSet(index)}
@@ -531,101 +602,99 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                               border: 'none',
                               color: sets.length === 1 ? 'var(--text-secondary)' : '#EF4444',
                               cursor: sets.length === 1 ? 'not-allowed' : 'pointer',
-                              padding: '8px',
-                              borderRadius: '8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
+                              padding: '8px', borderRadius: '8px', display: 'flex',
+                              alignItems: 'center', justifyContent: 'center',
                               opacity: sets.length === 1 ? 0.5 : 1
                             }}
-                            title="Supprimer cette série"
                           >
                             <X size={20} />
                           </button>
                         </div>
-
-                        {/* Inputs en colonne pour mobile */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {/* Répétitions */}
                           <div>
-                            <label style={{ 
-                              display: 'block', 
-                              fontSize: '13px', 
-                              fontWeight: '600',
-                              marginBottom: '6px',
-                              color: 'var(--text-secondary)'
-                            }}>
-                              Répétitions
-                            </label>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-secondary)' }}>Répétitions</label>
                             <input
-                              type="number"
-                              placeholder="Reps"
-                              value={set.reps}
+                              type="number" placeholder="Reps" value={set.reps}
                               onChange={(e) => updateSet(index, 'reps', e.target.value)}
-                              className="input"
-                              min="1"
-                              required
-                              style={{ 
-                                width: '100%',
-                                fontSize: '16px',
-                                padding: '12px',
-                                textAlign: 'center'
-                              }}
+                              className="input" min="1" required
+                              style={{ width: '100%', fontSize: '16px', padding: '12px', textAlign: 'center' }}
                             />
                           </div>
-
-                          {/* Poids et unité */}
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <div style={{ flex: 1 }}>
-                              <label style={{ 
-                                display: 'block', 
-                                fontSize: '13px', 
-                                fontWeight: '600',
-                                marginBottom: '6px',
-                                color: 'var(--text-secondary)'
-                              }}>
-                                Poids
-                              </label>
+                              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-secondary)' }}>Poids</label>
                               <input
-                                type="number"
-                                placeholder="Poids"
-                                value={set.weight}
+                                type="number" placeholder="Poids" value={set.weight}
                                 onChange={(e) => updateSet(index, 'weight', e.target.value)}
-                                className="input"
-                                step="0.05"
-                                min="0"
-                                style={{ 
-                                  width: '100%',
-                                  fontSize: '16px',
-                                  padding: '12px',
-                                  textAlign: 'center'
-                                }}
+                                className="input" step="0.05" min="0"
+                                style={{ width: '100%', fontSize: '16px', padding: '12px', textAlign: 'center' }}
                               />
                             </div>
-                            
                             <div style={{ width: '90px' }}>
-                              <label style={{ 
-                                display: 'block', 
-                                fontSize: '13px', 
-                                fontWeight: '600',
-                                marginBottom: '6px',
-                                color: 'var(--text-secondary)'
-                              }}>
-                                Unité
-                              </label>
+                              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-secondary)' }}>Unité</label>
                               <select
                                 value={set.weight_unit}
                                 onChange={(e) => updateSet(index, 'weight_unit', e.target.value)}
-                                className="input"
-                                style={{ 
-                                  width: '100%',
-                                  fontSize: '16px',
-                                  padding: '12px'
-                                }}
+                                className="input" style={{ width: '100%', fontSize: '16px', padding: '12px' }}
                               >
                                 <option value="kg">kg</option>
                                 <option value="lbs">lbs</option>
                               </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Sets Cardio */}
+                    {exerciseMode === 'cardio' && cardioSets.map((set, index) => (
+                      <div key={index} style={{
+                        display: 'flex', flexDirection: 'column', gap: '12px',
+                        marginBottom: '16px', padding: '16px',
+                        background: 'rgba(255,107,53,0.06)',
+                        borderRadius: '12px', border: '1px solid rgba(255,107,53,0.2)'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: '700', color: '#FF6B35', fontSize: '16px' }}>❤️ Intervalle #{index + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeSet(index)}
+                            disabled={cardioSets.length === 1}
+                            style={{
+                              background: 'transparent', border: 'none',
+                              color: cardioSets.length === 1 ? 'var(--text-secondary)' : '#EF4444',
+                              cursor: cardioSets.length === 1 ? 'not-allowed' : 'pointer',
+                              padding: '8px', borderRadius: '8px', display: 'flex',
+                              alignItems: 'center', justifyContent: 'center',
+                              opacity: cardioSets.length === 1 ? 0.5 : 1
+                            }}
+                          >
+                            <X size={20} />
+                          </button>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)' }}>Durée</label>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <div style={{ flex: 1 }}>
+                              <input
+                                type="number" placeholder="0" min="0"
+                                value={set.duration_min}
+                                onChange={(e) => updateCardioSet(index, 'duration_min', e.target.value)}
+                                className="input"
+                                style={{ width: '100%', fontSize: '18px', padding: '12px', textAlign: 'center', fontWeight: '800' }}
+                              />
+                              <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: '600' }}>MIN</div>
+                            </div>
+                            <span style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '16px' }}>:</span>
+                            <div style={{ flex: 1 }}>
+                              <input
+                                type="number" placeholder="0" min="0" max="59"
+                                value={set.duration_sec}
+                                onChange={(e) => updateCardioSet(index, 'duration_sec', e.target.value)}
+                                className="input"
+                                style={{ width: '100%', fontSize: '18px', padding: '12px', textAlign: 'center', fontWeight: '800' }}
+                              />
+                              <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: '600' }}>SEC</div>
                             </div>
                           </div>
                         </div>
@@ -636,24 +705,17 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                       type="button"
                       onClick={addSet}
                       style={{
-                        width: '100%',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        border: '2px dashed var(--border)',
+                        width: '100%', padding: '12px', borderRadius: '8px',
+                        border: `2px dashed ${exerciseMode === 'cardio' ? 'rgba(255,107,53,0.4)' : 'var(--border)'}`,
                         background: 'transparent',
-                        color: 'var(--primary)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        marginTop: '8px'
+                        color: exerciseMode === 'cardio' ? '#FF6B35' : 'var(--primary)',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', gap: '8px', fontSize: '14px',
+                        fontWeight: '600', marginTop: '8px'
                       }}
                     >
                       <Plus size={20} />
-                      Ajouter une série
+                      {exerciseMode === 'cardio' ? 'Ajouter un intervalle' : 'Ajouter une série'}
                     </button>
                   </div>
 

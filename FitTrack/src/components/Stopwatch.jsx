@@ -4,7 +4,7 @@ import { Play, Pause, RotateCcw, Timer } from 'lucide-react'
 function Stopwatch() {
   const [elapsed, setElapsed] = useState(0)       // ms
   const [running, setRunning] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const intervalRef = useRef(null)
   const startRef = useRef(null)
 
