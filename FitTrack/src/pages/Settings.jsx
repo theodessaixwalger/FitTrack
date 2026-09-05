@@ -1,4 +1,4 @@
-import { ArrowLeft, Globe, Bell, Trash2, Lock, ChevronRight, X } from 'lucide-react'
+import { ArrowLeft, Globe, Bell, Trash, Lock, CaretRight, X } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase'
@@ -124,7 +124,7 @@ function Settings() {
             marginBottom: '16px'
           }}
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft weight="bold" size={20} />
           Retour
         </button>
         <h1>Paramètres</h1>
@@ -135,7 +135,7 @@ function Settings() {
         {/* Langue */}
         <div className="section">
           <h2 className="section-title">
-            <Globe size={20} style={{ marginRight: '8px' }} />
+            <Globe size={20} className="section-icon" style={{ marginRight: '8px' }} />
             Langue
           </h2>
           
@@ -195,7 +195,7 @@ function Settings() {
         {/* Notifications */}
         <div className="section">
           <h2 className="section-title">
-            <Bell size={20} style={{ marginRight: '8px' }} />
+            <Bell size={20} className="section-icon" style={{ marginRight: '8px' }} />
             Notifications
           </h2>
           
@@ -390,7 +390,7 @@ function Settings() {
         {/* Sécurité */}
         <div className="section">
           <h2 className="section-title">
-            <Lock size={20} style={{ marginRight: '8px' }} />
+            <Lock size={20} className="section-icon" style={{ marginRight: '8px' }} />
             Sécurité
           </h2>
           
@@ -426,14 +426,14 @@ function Settings() {
                 Modifier votre mot de passe de connexion
               </div>
             </div>
-            <ChevronRight size={20} style={{ color: 'var(--text-tertiary)' }} />
+            <CaretRight weight="bold" size={20} style={{ color: 'var(--text-tertiary)' }} />
           </button>
         </div>
 
         {/* Maintenance */}
         <div className="section">
           <h2 className="section-title">
-            <Trash2 size={20} style={{ marginRight: '8px' }} />
+            <Trash size={20} className="section-icon" style={{ marginRight: '8px' }} />
             Maintenance
           </h2>
           
@@ -460,7 +460,7 @@ function Settings() {
               e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
-            <Trash2 size={24} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+            <Trash size={24} style={{ color: 'var(--primary)', flexShrink: 0 }} />
             <div style={{ flex: 1, textAlign: 'left' }}>
               <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>
                 Vider le cache
@@ -523,7 +523,7 @@ function Settings() {
                   justifyContent: 'center'
                 }}
               >
-                <X size={24} />
+                <X weight="bold" size={24} />
               </button>
             </div>
 

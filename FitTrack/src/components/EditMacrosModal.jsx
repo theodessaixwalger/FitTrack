@@ -1,6 +1,6 @@
 // src/components/EditMacrosModal.jsx
 import { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Fire } from '@phosphor-icons/react'
 
 function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
   const [goals, setGoals] = useState(currentGoals)
@@ -93,7 +93,7 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
               e.currentTarget.style.color = 'var(--text-secondary)'
             }}
           >
-            <X size={20} />
+            <X weight="bold" size={20} />
           </button>
         </div>
 
@@ -112,7 +112,8 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                 color: 'var(--text-primary)',
                 marginBottom: '8px'
               }}>
-                🔥 Calories (kcal)
+                <Fire size={15} style={{ verticalAlign: '-2px', marginRight: '5px', color: 'var(--m-cal)' }} />
+                Calories (kcal)
               </label>
               <input
                 type="number"

@@ -1,4 +1,4 @@
-import { Plus, Activity, TrendingUp, Flame, Target, Award } from "lucide-react";
+import { Plus, Pulse, TrendUp, Flame, Target, Medal } from '@phosphor-icons/react';
 import { useNutrition } from "../context/NutritionContext";
 import { useNavigate } from "react-router-dom";
 import PersonalNote from "../components/PersonalNote";
@@ -63,6 +63,10 @@ function Home() {
     fetchUser();
   }, []);
 
+  // Helper d'affichage : pourcentage borné pour les anneaux de progression
+  const ringPct = (value, goal) =>
+    goal > 0 ? Math.min((value / goal) * 100, 100) : 0;
+
   if (loading || loadingUser) {
     return (
       <div className="page">
@@ -74,19 +78,29 @@ function Home() {
             flexDirection: "column",
             alignItems: "center",
             gap: "16px",
+            minHeight: "60vh",
+            justifyContent: "center",
           }}
         >
           <div
             style={{
-              width: "48px",
-              height: "48px",
-              border: "4px solid var(--border-light)",
-              borderTopColor: "var(--primary)",
+              width: "44px",
+              height: "44px",
+              border: "3px solid rgba(255,255,255,0.08)",
+              borderTopColor: "var(--accent)",
               borderRadius: "50%",
               animation: "spin 0.8s linear infinite",
             }}
           />
-          <div style={{ color: "var(--text-secondary)", fontWeight: "600" }}>
+          <div
+            style={{
+              color: "var(--text-tertiary)",
+              fontWeight: "700",
+              fontSize: "12px",
+              letterSpacing: "1px",
+              textTransform: "uppercase",
+            }}
+          >
             Chargement...
           </div>
         </div>
@@ -105,136 +119,140 @@ function Home() {
         </div>
       </div>
 
-      <div className="page-content">
+      <div className="page-content bento">
+        {/* Actions principales */}
+        <div className="cta-row span-6">
+          <button
+            type="button"
+            className="cta cta-primary"
+            onClick={() => navigate("/nutrition")}
+          >
+            <Plus weight="bold" size={17} />
+            Ajouter un repas
+          </button>
+          <button
+            type="button"
+            className="cta cta-ghost"
+            onClick={() => navigate("/exercise")}
+          >
+            <Pulse size={17} />
+            Entraînement
+          </button>
+        </div>
+
         {/* Streak Indicator */}
-        {userId && <StreakIndicator userId={userId} />}
-        
-        {/* Reste du code... */}
-        <div className="hero-card">
-          <div className="label">Calories aujourd'hui</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span className="value">{Math.round(dailyNutrition.calories)}</span>
-            <span className="unit">/ {calorieGoal.toLocaleString()} kcal</span>
+        {userId && (
+          <div className="span-6">
+            <StreakIndicator userId={userId} />
           </div>
-          <div style={{ marginTop: "24px" }}>
+        )}
+
+        {/* Calories du jour — anneau de progression + reste a consommer */}
+        <div className="hero-card glow-card glow-cal span-6">
+          <div className="hero-layout">
             <div
-              className="progress-bar"
-              style={{ background: "rgba(255,255,255,0.2)" }}
+              className="ring ring-glow hero-ring"
+              style={{ "--ring-pct": calculateProgress() }}
             >
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${calculateProgress()}%`,
-                  background: "rgba(255,255,255,0.9)",
-                  transition: "width 0.5s ease",
-                }}
-              ></div>
+              <div className="ring-content">
+                <span className="ring-value">
+                  {Math.round(calculateProgress())}
+                </span>
+                <span className="ring-unit">%</span>
+              </div>
             </div>
-            <div
-              style={{
-                marginTop: "12px",
-                fontSize: "14px",
-                opacity: "0.9",
-                fontWeight: "600",
-              }}
-            >
-              {dailyNutrition.calories < calorieGoal
-                ? `Plus que ${Math.round(
-                    getRemainingCalories()
-                  )} kcal pour atteindre votre objectif 🎯`
-                : `Objectif atteint ! 🎉`}
+
+            <div className="hero-meta">
+              <div className="label">
+                <Flame
+                  size={12}
+                  style={{ verticalAlign: "-2px", marginRight: "5px" }}
+                />
+                Calories
+              </div>
+              <div className="value">
+                {Math.round(getRemainingCalories())}
+              </div>
+              <div
+                className={`unit ${
+                  dailyNutrition.calories >= calorieGoal ? "is-done" : ""
+                }`}
+              >
+                {dailyNutrition.calories >= calorieGoal
+                  ? "Objectif atteint 🎉"
+                  : "kcal restantes"}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="section">
-          <h2 className="section-title">Macronutriments</h2>
+        {/* Macronutriments — bento d'anneaux */}
+        <div className="section span-6">
+          <div className="section-header">
+            <h2 className="section-title">Macronutriments</h2>
+          </div>
           <div className="macros-grid">
-            <div className="macro-item">
+            <div className="macro-item macro-protein glow-card glow-pro">
               <div
-                className="macro-circle"
+                className="ring macro-circle"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)",
+                  "--ring-pct": ringPct(dailyNutrition.proteins, proteinGoal),
                 }}
               >
-                <div style={{ textAlign: "center", color: "white" }}>
-                  <div style={{ fontSize: "18px", fontWeight: "800" }}>
-                    {Math.round(dailyNutrition.proteins)}g
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      opacity: "0.9",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Protéines
-                  </div>
+                <div className="ring-content">
+                  <span className="ring-value">
+                    {Math.round(dailyNutrition.proteins)}
+                  </span>
+                  <span className="ring-unit">g</span>
                 </div>
               </div>
-              <div className="macro-value">
-                {Math.round(dailyNutrition.proteins)} / {proteinGoal}g
-              </div>
+              <div className="macro-value">/ {proteinGoal} g</div>
+              <div className="macro-label">Protéines</div>
             </div>
-            <div className="macro-item">
+
+            <div className="macro-item macro-carbs glow-card glow-car">
               <div
-                className="macro-circle"
+                className="ring macro-circle"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #4ECDC4 0%, #44A9A3 100%)",
+                  "--ring-pct": ringPct(dailyNutrition.carbs, carbsGoal),
                 }}
               >
-                <div style={{ textAlign: "center", color: "white" }}>
-                  <div style={{ fontSize: "18px", fontWeight: "800" }}>
-                    {Math.round(dailyNutrition.carbs)}g
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      opacity: "0.9",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Glucides
-                  </div>
+                <div className="ring-content">
+                  <span className="ring-value">
+                    {Math.round(dailyNutrition.carbs)}
+                  </span>
+                  <span className="ring-unit">g</span>
                 </div>
               </div>
-              <div className="macro-value">
-                {Math.round(dailyNutrition.carbs)} / {carbsGoal}g
-              </div>
+              <div className="macro-value">/ {carbsGoal} g</div>
+              <div className="macro-label">Glucides</div>
             </div>
-            <div className="macro-item">
+
+            <div className="macro-item macro-fats glow-card glow-fat">
               <div
-                className="macro-circle"
+                className="ring macro-circle"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #667EEA 0%, #764BA2 100%)",
+                  "--ring-pct": ringPct(dailyNutrition.fats, fatsGoal),
                 }}
               >
-                <div style={{ textAlign: "center", color: "white" }}>
-                  <div style={{ fontSize: "18px", fontWeight: "800" }}>
-                    {Math.round(dailyNutrition.fats)}g
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      opacity: "0.9",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Lipides
-                  </div>
+                <div className="ring-content">
+                  <span className="ring-value">
+                    {Math.round(dailyNutrition.fats)}
+                  </span>
+                  <span className="ring-unit">g</span>
                 </div>
               </div>
-              <div className="macro-value">
-                {Math.round(dailyNutrition.fats)} / {fatsGoal}g
-              </div>
+              <div className="macro-value">/ {fatsGoal} g</div>
+              <div className="macro-label">Lipides</div>
             </div>
           </div>
         </div>
 
-        {userId && <PersonalNote userId={userId} />}
+        {userId && (
+          <div className="span-6">
+            <PersonalNote userId={userId} />
+          </div>
+        )}
       </div>
     </div>
   );

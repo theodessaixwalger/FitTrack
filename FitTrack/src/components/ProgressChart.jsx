@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { TrendingDown, TrendingUp, Scale } from 'lucide-react';
+import { TrendDown, TrendUp, ChartLine } from '@phosphor-icons/react';
 
 function ProgressChart({ data, targetWeight }) {
   const [chartData, setChartData] = useState([]);
@@ -44,24 +44,28 @@ function ProgressChart({ data, targetWeight }) {
     if (active && payload && payload.length) {
       return (
         <div style={{
-          background: 'white',
-          padding: '12px 16px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          border: 'none'
+          background: 'var(--surface-elevated)',
+          padding: '11px 14px',
+          borderRadius: 'var(--r-md)',
+          boxShadow: 'var(--shadow-lg)',
+          border: '1px solid var(--accent-line)'
         }}>
-          <p style={{ 
-            fontSize: '13px', 
-            fontWeight: '600', 
-            color: 'var(--text-secondary)',
-            marginBottom: '4px' 
+          <p style={{
+            fontSize: '11px',
+            fontWeight: '700',
+            color: 'var(--text-tertiary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.6px',
+            marginBottom: '5px'
           }}>
             {payload[0].payload.fullDate}
           </p>
-          <p style={{ 
-            fontSize: '16px', 
-            fontWeight: '800', 
-            color: 'var(--primary)',
+          <p style={{
+            fontSize: '20px',
+            fontWeight: '800',
+            color: 'var(--accent)',
+            letterSpacing: '-0.5px',
+            fontVariantNumeric: 'tabular-nums',
             margin: 0
           }}>
             {payload[0].value} kg
@@ -87,13 +91,26 @@ function ProgressChart({ data, targetWeight }) {
       <div style={{
         padding: '40px',
         textAlign: 'center',
-        color: 'var(--text-secondary)'
+        color: 'var(--text-tertiary)'
       }}>
-        <Scale size={48} style={{ opacity: 0.3, marginBottom: '12px' }} />
-        <p style={{ fontWeight: '600', marginBottom: '4px' }}>
+        <div style={{
+          width: '68px',
+          height: '68px',
+          borderRadius: '50%',
+          background: 'var(--accent-ghost)',
+          border: '1px solid var(--accent-line)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px',
+          color: 'var(--accent)'
+        }}>
+          <ChartLine size={32} />
+        </div>
+        <p style={{ fontWeight: '700', marginBottom: '4px', color: 'var(--text-primary)' }}>
           Aucune donnée disponible
         </p>
-        <p style={{ fontSize: '14px' }}>
+        <p style={{ fontSize: '13px' }}>
           Commencez à enregistrer votre poids pour voir l'évolution
         </p>
       </div>
@@ -109,8 +126,9 @@ function ProgressChart({ data, targetWeight }) {
           gap: '12px',
           marginBottom: '20px',
           padding: '16px',
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px'
+          background: 'var(--surface-sunken)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-md)'
         }}>
           <div style={{ flex: 1 }}>
             <div style={{ 
@@ -146,7 +164,7 @@ function ProgressChart({ data, targetWeight }) {
             }}>
               {stats.trend === 'down' ? (
                 <>
-                  <TrendingDown size={20} color="var(--success)" />
+                  <TrendDown size={20} color="var(--success)" />
                   <span style={{ 
                     fontSize: '20px', 
                     fontWeight: '800',
@@ -157,7 +175,7 @@ function ProgressChart({ data, targetWeight }) {
                 </>
               ) : (
                 <>
-                  <TrendingUp size={20} color="var(--danger)" />
+                  <TrendUp size={20} color="var(--danger)" />
                   <span style={{ 
                     fontSize: '20px', 
                     fontWeight: '800',
@@ -173,45 +191,69 @@ function ProgressChart({ data, targetWeight }) {
       )}
 
       {/* Graphique */}
-      <ResponsiveContainer width="100%" height={300}>
-        <AreaChart data={chartData}>
+      <ResponsiveContainer width="100%" height={280}>
+        <AreaChart data={chartData} margin={{ top: 12, right: 8, left: -12, bottom: 4 }}>
           <defs>
             <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#FF6B35" stopOpacity={0}/>
+              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.38} />
+              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis 
-            dataKey="date" 
-            stroke="#999"
-            style={{ fontSize: '12px', fontWeight: '600' }}
+
+          {/* Grille horizontale seule : moins de bruit sous la courbe */}
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="var(--border)"
+            vertical={false}
           />
-          <YAxis 
-            stroke="#999"
-            style={{ fontSize: '12px', fontWeight: '600' }}
+          <XAxis
+            dataKey="date"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: 'var(--text-tertiary)', fontSize: 11, fontWeight: 600 }}
+            dy={6}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fill: 'var(--text-tertiary)', fontSize: 11, fontWeight: 600 }}
             domain={['dataMin - 2', 'dataMax + 2']}
+            width={44}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ stroke: 'var(--accent-line)', strokeWidth: 1, strokeDasharray: '4 4' }}
+          />
+
           {targetWeight && (
-            <Line 
-              type="monotone" 
-              dataKey="target" 
-              stroke="#4ECDC4" 
-              strokeWidth={2}
+            <Line
+              type="monotone"
+              dataKey="target"
+              stroke="var(--text-tertiary)"
+              strokeWidth={1.5}
               strokeDasharray="5 5"
+              strokeLinecap="round"
               dot={false}
+              activeDot={false}
               name="Objectif"
+              isAnimationActive={false}
             />
           )}
-          <Area 
-            type="monotone" 
-            dataKey="value" 
-            stroke="#FF6B35" 
+
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke="var(--accent)"
             strokeWidth={3}
-            fillOpacity={1} 
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fillOpacity={1}
             fill="url(#colorWeight)"
             name="Poids"
+            dot={{ r: 4, fill: 'var(--accent)', stroke: 'var(--bg)', strokeWidth: 2 }}
+            activeDot={{ r: 7, fill: 'var(--accent)', stroke: 'var(--bg)', strokeWidth: 3 }}
+            animationDuration={600}
+            animationEasing="ease-out"
           />
         </AreaChart>
       </ResponsiveContainer>

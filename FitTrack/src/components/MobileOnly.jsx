@@ -1,6 +1,6 @@
 // src/components/MobileOnly.jsx
 import { useState, useEffect } from 'react';
-import { Smartphone, Tablet, Monitor } from 'lucide-react';
+import { DeviceMobile, DeviceTablet, Monitor } from '@phosphor-icons/react';
 
 function MobileOnly({ children }) {
   const [isMobile, setIsMobile] = useState(false);
@@ -62,7 +62,7 @@ function MobileOnly({ children }) {
             justifyContent: 'center',
             boxShadow: '0 8px 16px rgba(255, 107, 53, 0.3)'
           }}>
-            <Smartphone size={36} color="white" strokeWidth={2.5} />
+            <DeviceMobile size={36} color="white" />
           </div>
         </div>
 
@@ -119,7 +119,7 @@ function MobileOnly({ children }) {
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Smartphone size={24} color="white" />
+              <DeviceMobile size={24} color="white" />
             </div>
             <h3 style={{ 
               fontSize: '18px',
@@ -180,8 +180,8 @@ function MobileOnly({ children }) {
           marginBottom: '32px'
         }}>
           {[
-            { icon: Smartphone, label: 'Mobile', color: '#FF6B35' },
-            { icon: Tablet, label: 'Tablette', color: '#4ECDC4' },
+            { icon: DeviceMobile, label: 'Mobile', color: '#FF6B35' },
+            { icon: DeviceTablet, label: 'Tablette', color: '#4ECDC4' },
             { icon: Monitor, label: 'Desktop', color: '#E74C3C', disabled: true }
           ].map((item, i) => (
             <div key={i} style={{

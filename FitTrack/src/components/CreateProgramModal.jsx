@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Plus } from 'lucide-react'
+import { X, Plus } from '@phosphor-icons/react'
 
 function CreateProgramModal({ isOpen, onClose, onCreateProgram }) {
   const [name, setName] = useState('')
@@ -42,7 +42,7 @@ function CreateProgramModal({ isOpen, onClose, onCreateProgram }) {
         <div className="modal-header">
           <h2>Créer un programme</h2>
           <button className="modal-close" onClick={onClose}>
-            <X size={24} />
+            <X weight="bold" size={24} />
           </button>
         </div>
 
@@ -125,7 +125,7 @@ function CreateProgramModal({ isOpen, onClose, onCreateProgram }) {
                 </>
               ) : (
                 <>
-                  <Plus size={20} />
+                  <Plus weight="bold" size={20} />
                   Créer le programme
                 </>
               )}

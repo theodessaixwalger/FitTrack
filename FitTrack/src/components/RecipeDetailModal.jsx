@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Trash2, ChefHat, Pencil } from 'lucide-react'
+import { X, Trash, ChefHat, PencilSimple } from '@phosphor-icons/react'
 import { calculateRecipeNutrition } from '../services/recipeService'
 
 function RecipeDetailModal({ recipe, isOpen, onClose, onDelete, onAddToMeal, onEdit }) {
@@ -72,21 +72,21 @@ function RecipeDetailModal({ recipe, isOpen, onClose, onDelete, onAddToMeal, onE
                             width: '36px', height: '36px', display: 'flex', alignItems: 'center',
                             justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)'
                         }}>
-                            <Pencil size={16} />
+                            <PencilSimple size={16} />
                         </button>
                         <button onClick={() => onDelete(recipe.id)} style={{
                             background: '#fee', border: 'none', borderRadius: '10px',
                             width: '36px', height: '36px', display: 'flex', alignItems: 'center',
                             justifyContent: 'center', cursor: 'pointer', color: '#EF4444'
                         }}>
-                            <Trash2 size={16} />
+                            <Trash size={16} />
                         </button>
                         <button onClick={onClose} style={{
                             background: 'var(--bg-secondary)', border: 'none', borderRadius: '50%',
                             width: '36px', height: '36px', display: 'flex', alignItems: 'center',
                             justifyContent: 'center', cursor: 'pointer'
                         }}>
-                            <X size={18} />
+                            <X weight="bold" size={18} />
                         </button>
                     </div>
                 </div>

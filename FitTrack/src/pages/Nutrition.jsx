@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2, Settings, ChefHat } from 'lucide-react'
+import { Plus, Trash, Gear, ChefHat, CookingPot, SunHorizon, Sun, MoonStars, Cookie } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import AddFoodModal from '../components/AddFoodModal'
 import EditMacrosModal from '../components/EditMacrosModal'
@@ -97,6 +97,10 @@ function Nutrition() {
     return meals.filter(m => m.meal_type === type)
   }
 
+  // Helper d'affichage : pourcentage borné pour les anneaux de progression
+  const ringPct = (value, goal) =>
+    goal > 0 ? Math.min((value / goal) * 100, 100) : 0
+
   const MealSection = ({ title, emoji, mealType }) => {
     const mealData = getMealsByType(mealType)
     const hasMeals = mealData.length > 0 && mealData.some(m =>
@@ -104,95 +108,76 @@ function Nutrition() {
     )
 
     return (
-      <div className="section">
+      <div className="section span-6">
         <div className="section-header">
-          <h2 className="section-title">{emoji} {title}</h2>
+          <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <span style={{ color: 'var(--accent)', display: 'flex' }}>{emoji}</span>
+            {title}
+          </h2>
           <button
             onClick={() => openModalForMeal(mealType)}
-            style={{
-              background: 'var(--primary)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '12px',
-              width: '36px',
-              height: '36px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(255, 107, 53, 0.3)',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            className="icon-btn icon-btn-accent"
           >
-            <Plus size={20} />
+            <Plus weight="bold" size={19} />
           </button>
         </div>
 
         {hasMeals ? (
           <div className="card">
-            <div className="card-body" style={{ padding: '0' }}>
+            <div className="card-body" style={{ padding: '10px' }}>
               {mealData.map((meal) => (
                 <>
                   {/* Aliments individuels */}
                   {meal.meal_foods.map((mealFood) => (
                     <div
                       key={`food-${mealFood.id}`}
-                      className="list-item"
-                      style={{
-                        position: 'relative',
-                        transition: 'all 0.2s ease',
-                        opacity: deletingItem === mealFood.id ? 0.5 : 1
-                      }}
+                      className="meal-row"
+                      style={{ opacity: deletingItem === mealFood.id ? 0.5 : 1 }}
                     >
-                      <div className="list-item-left" style={{ flex: 1 }}>
-                        <div className="list-item-info">
-                          <h3>{mealFood.foods.name}</h3>
-                          <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>{mealFood.quantity}{mealFood.foods.serving_unit}</span>
-                            {mealFood.foods.brand && (
-                              <>
-                                <span style={{ opacity: 0.5 }}>•</span>
-                                <span>{mealFood.foods.brand}</span>
-                              </>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ textAlign: 'right' }}>
-                          <div className="list-item-value">
-                            {Math.round((mealFood.foods.calories * mealFood.quantity) / mealFood.foods.serving_size)} kcal
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>
-                            P: {Math.round((mealFood.foods.proteins * mealFood.quantity) / mealFood.foods.serving_size)}g •
-                            G: {Math.round((mealFood.foods.carbs * mealFood.quantity) / mealFood.foods.serving_size)}g •
-                            L: {Math.round((mealFood.foods.fats * mealFood.quantity) / mealFood.foods.serving_size)}g
+                      <div className="meal-row-main">
+                        <div className="meal-row-head">
+                          <h3 className="meal-row-name">{mealFood.foods.name}</h3>
+                          <div className="meal-row-kcal">
+                            {Math.round((mealFood.foods.calories * mealFood.quantity) / mealFood.foods.serving_size)}
+                            <span>kcal</span>
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => handleDeleteFood(mealFood.id)}
-                          disabled={deletingItem === mealFood.id}
-                          style={{
-                            background: 'transparent', border: 'none', color: '#EF4444',
-                            cursor: 'pointer', padding: '8px', borderRadius: '8px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'all 0.2s ease',
-                            opacity: deletingItem === mealFood.id ? 0.5 : 1
-                          }}
-                          onMouseOver={(e) => { if (deletingItem !== mealFood.id) e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
-                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                          {deletingItem === mealFood.id ? (
-                            <div style={{ width: '20px', height: '20px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-                          ) : (
-                            <Trash2 size={18} />
+                        <div className="meal-row-meta">
+                          <span>{mealFood.quantity}{mealFood.foods.serving_unit}</span>
+                          {mealFood.foods.brand && (
+                            <>
+                              <span style={{ opacity: 0.5 }}>•</span>
+                              <span className="truncate">{mealFood.foods.brand}</span>
+                            </>
                           )}
-                        </button>
+                        </div>
+
+                        <div className="macro-badges">
+                          <span className="macro-badge badge-pro">
+                            P {Math.round((mealFood.foods.proteins * mealFood.quantity) / mealFood.foods.serving_size)}g
+                          </span>
+                          <span className="macro-badge badge-car">
+                            G {Math.round((mealFood.foods.carbs * mealFood.quantity) / mealFood.foods.serving_size)}g
+                          </span>
+                          <span className="macro-badge badge-fat">
+                            L {Math.round((mealFood.foods.fats * mealFood.quantity) / mealFood.foods.serving_size)}g
+                          </span>
+                        </div>
                       </div>
+
+                      <button
+                        onClick={() => handleDeleteFood(mealFood.id)}
+                        disabled={deletingItem === mealFood.id}
+                        className="btn-remove"
+                        style={{ opacity: deletingItem === mealFood.id ? 0.5 : 1 }}
+                      >
+                        {deletingItem === mealFood.id ? (
+                          <div style={{ width: '20px', height: '20px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                        ) : (
+                          <Trash size={18} />
+                        )}
+                      </button>
                     </div>
                   ))}
 
@@ -203,64 +188,68 @@ function Nutrition() {
                     return (
                       <div
                         key={`recipe-${mealRecipe.id}`}
-                        className="list-item"
-                        style={{
-                          position: 'relative',
-                          transition: 'all 0.2s ease',
-                          opacity: deletingItem === mealRecipe.id ? 0.5 : 1,
-                          background: 'rgba(255,107,53,0.03)'
-                        }}
+                        className="meal-row meal-row-recipe"
+                        style={{ opacity: deletingItem === mealRecipe.id ? 0.5 : 1 }}
                       >
-                        <div className="list-item-left" style={{ flex: 1 }}>
-                          <div className="list-item-info">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <ChefHat size={14} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-                              <h3 style={{ margin: 0 }}>{recipe.name}</h3>
+                        <div className="meal-row-main">
+                          <div className="meal-row-head">
+                            <h3 className="meal-row-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <CookingPot size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                              <span className="truncate">{recipe.name}</span>
+                            </h3>
+                            <div className="meal-row-kcal">
+                              {Math.round(nutrition.calories)}
+                              <span>kcal</span>
                             </div>
-                            <p style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                              <span>{mealRecipe.servings} portion{mealRecipe.servings > 1 ? 's' : ''}</span>
-                              {recipe.description && (
+                          </div>
+
+                          <div className="meal-row-meta">
+                            <span>{mealRecipe.servings} portion{mealRecipe.servings > 1 ? 's' : ''}</span>
+                            {(() => {
+                              // Affichage : 2 premiers ingredients + compte du reste.
+                              // Repli sur la description si la recette n'en liste aucun.
+                              const ingredients = recipe.recipe_ingredients || []
+                              const shown = ingredients.slice(0, 2).map(i => i.foods?.name).filter(Boolean)
+                              const rest = ingredients.length - shown.length
+
+                              if (shown.length === 0) {
+                                return recipe.description ? (
+                                  <>
+                                    <span style={{ opacity: 0.4 }}>•</span>
+                                    <span className="truncate">{recipe.description}</span>
+                                  </>
+                                ) : null
+                              }
+
+                              return (
                                 <>
                                   <span style={{ opacity: 0.4 }}>•</span>
-                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{recipe.description}</span>
+                                  <span className="truncate">{shown.join(' • ')}</span>
+                                  {rest > 0 && <span className="chip-more">+{rest}</span>}
                                 </>
-                              )}
-                            </p>
+                              )
+                            })()}
+                          </div>
+
+                          <div className="macro-badges">
+                            <span className="macro-badge badge-pro">P {Math.round(nutrition.proteins)}g</span>
+                            <span className="macro-badge badge-car">G {Math.round(nutrition.carbs)}g</span>
+                            <span className="macro-badge badge-fat">L {Math.round(nutrition.fats)}g</span>
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ textAlign: 'right' }}>
-                            <div className="list-item-value">
-                              {Math.round(nutrition.calories)} kcal
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>
-                              P: {Math.round(nutrition.proteins)}g •
-                              G: {Math.round(nutrition.carbs)}g •
-                              L: {Math.round(nutrition.fats)}g
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => handleDeleteRecipe(mealRecipe.id)}
-                            disabled={deletingItem === mealRecipe.id}
-                            style={{
-                              background: 'transparent', border: 'none', color: '#EF4444',
-                              cursor: 'pointer', padding: '8px', borderRadius: '8px',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              transition: 'all 0.2s ease',
-                              opacity: deletingItem === mealRecipe.id ? 0.5 : 1
-                            }}
-                            onMouseOver={(e) => { if (deletingItem !== mealRecipe.id) e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
-                            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                          >
-                            {deletingItem === mealRecipe.id ? (
-                              <div style={{ width: '20px', height: '20px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-                            ) : (
-                              <Trash2 size={18} />
-                            )}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleDeleteRecipe(mealRecipe.id)}
+                          disabled={deletingItem === mealRecipe.id}
+                          className="btn-remove"
+                          style={{ opacity: deletingItem === mealRecipe.id ? 0.5 : 1 }}
+                        >
+                          {deletingItem === mealRecipe.id ? (
+                            <div style={{ width: '20px', height: '20px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                          ) : (
+                            <Trash size={18} />
+                          )}
+                        </button>
                       </div>
                     )
                   })}
@@ -270,14 +259,14 @@ function Nutrition() {
           </div>
         ) : (
           <div style={{
-            padding: '32px',
+            padding: '28px',
             textAlign: 'center',
-            color: 'var(--text-secondary)',
-            fontSize: '14px',
+            color: 'var(--text-tertiary)',
+            fontSize: '13px',
             fontWeight: '600',
             background: 'var(--surface)',
-            borderRadius: '16px',
-            border: '2px dashed var(--border-light)'
+            borderRadius: 'var(--r-lg)',
+            border: '1px dashed var(--border-strong)'
           }}>
             Aucun aliment ajouté
           </div>
@@ -298,14 +287,20 @@ function Nutrition() {
           gap: '16px'
         }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid var(--border-light)',
-            borderTopColor: 'var(--primary)',
+            width: '44px',
+            height: '44px',
+            border: '3px solid rgba(255,255,255,0.08)',
+            borderTopColor: 'var(--accent)',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite'
           }} />
-          <div style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>
+          <div style={{
+            color: 'var(--text-tertiary)',
+            fontWeight: '700',
+            fontSize: '12px',
+            letterSpacing: '1px',
+            textTransform: 'uppercase'
+          }}>
             Chargement...
           </div>
         </div>
@@ -323,22 +318,7 @@ function Nutrition() {
           </div>
           <button
             onClick={() => navigate('/recipes')}
-            style={{
-              background: 'var(--surface)',
-              border: '2px solid var(--border-light)',
-              borderRadius: '12px',
-              padding: '10px 14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '13px',
-              fontWeight: '700',
-              color: 'var(--text-primary)',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
-            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+            className="cta cta-ghost cta-compact"
           >
             <ChefHat size={16} />
             Recettes
@@ -346,105 +326,94 @@ function Nutrition() {
         </div>
       </div>
 
-      <div className="page-content">
+      <div className="page-content bento">
         {/* Hero Card - Calories du jour */}
-        <div className="hero-card">
-          <div className="label">Calories aujourd'hui</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <span className="value">{Math.round(dailyNutrition.calories)}</span>
-            <span className="unit">/ {calorieGoal.toLocaleString()} kcal</span>
+        <div className="hero-card glow-card glow-cal span-6">
+          <div className="hero-layout">
+            <div
+              className="ring ring-glow hero-ring"
+              style={{ '--ring-pct': calculateProgress() }}
+            >
+              <div className="ring-content">
+                <span className="ring-value">{Math.round(calculateProgress())}</span>
+                <span className="ring-unit">%</span>
+              </div>
+            </div>
+
+            <div className="hero-meta">
+              <div className="label">Calories aujourd'hui</div>
+              <div className="value">{Math.round(dailyNutrition.calories)}</div>
+              <div className="unit">/ {calorieGoal.toLocaleString()} kcal</div>
+            </div>
           </div>
-          <div style={{ marginTop: '24px' }}>
-            <div className="progress-bar" style={{ background: 'rgba(255,255,255,0.2)' }}>
-              <div className="progress-fill" style={{
-                width: `${calculateProgress()}%`,
-                background: 'rgba(255,255,255,0.9)',
-                transition: 'width 0.5s ease'
-              }}></div>
-            </div>
-            <div style={{
-              marginTop: '12px',
-              fontSize: '14px',
-              opacity: '0.9',
-              fontWeight: '600'
-            }}>
-              {getRemainingCalories() > 0
-                ? `Plus que ${Math.round(getRemainingCalories())} kcal pour atteindre votre objectif 🎯`
-                : `Objectif atteint ! 🎉`
-              }
-            </div>
+
+          <div className={`hero-note ${getRemainingCalories() > 0 ? '' : 'is-done'}`}>
+            {getRemainingCalories() > 0
+              ? `Plus que ${Math.round(getRemainingCalories())} kcal pour atteindre votre objectif 🎯`
+              : `Objectif atteint ! 🎉`
+            }
           </div>
         </div>
 
         {/* Macros avec bouton de modification */}
-        <div className="section">
+        <div className="section span-6">
           <div className="section-header">
             <h2 className="section-title">Macronutriments</h2>
             <button
               onClick={() => setIsMacrosModalOpen(true)}
-              style={{
-                background: 'var(--surface)',
-                color: 'var(--text-primary)',
-                border: '2px solid var(--border-light)',
-                borderRadius: '12px',
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)'
-                e.currentTarget.style.color = 'var(--primary)'
-                e.currentTarget.style.transform = 'scale(1.05)'
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-light)'
-                e.currentTarget.style.color = 'var(--text-primary)'
-                e.currentTarget.style.transform = 'scale(1)'
-              }}
+              className="icon-btn icon-btn-ghost"
             >
-              <Settings size={18} />
+              <Gear size={18} />
             </button>
           </div>
           <div className="macros-grid">
-            <div className="macro-item">
-              <div className="macro-circle" style={{ background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)' }}>
-                <div style={{ textAlign: 'center', color: 'white' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800' }}>{Math.round(dailyNutrition.proteins)}g</div>
-                  <div style={{ fontSize: '11px', opacity: '0.9', fontWeight: '600' }}>Protéines</div>
+            <div className="macro-item macro-protein glow-card glow-pro">
+              <div
+                className="ring macro-circle"
+                style={{ '--ring-pct': ringPct(dailyNutrition.proteins, proteinGoal) }}
+              >
+                <div className="ring-content">
+                  <span className="ring-value">{Math.round(dailyNutrition.proteins)}</span>
+                  <span className="ring-unit">g</span>
                 </div>
               </div>
               <div className="macro-value">{Math.round(dailyNutrition.proteins)} / {proteinGoal}g</div>
+              <div className="macro-label">Protéines</div>
             </div>
-            <div className="macro-item">
-              <div className="macro-circle" style={{ background: 'linear-gradient(135deg, #4ECDC4 0%, #44A9A3 100%)' }}>
-                <div style={{ textAlign: 'center', color: 'white' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800' }}>{Math.round(dailyNutrition.carbs)}g</div>
-                  <div style={{ fontSize: '11px', opacity: '0.9', fontWeight: '600' }}>Glucides</div>
+            <div className="macro-item macro-carbs glow-card glow-car">
+              <div
+                className="ring macro-circle"
+                style={{ '--ring-pct': ringPct(dailyNutrition.carbs, carbsGoal) }}
+              >
+                <div className="ring-content">
+                  <span className="ring-value">{Math.round(dailyNutrition.carbs)}</span>
+                  <span className="ring-unit">g</span>
                 </div>
               </div>
               <div className="macro-value">{Math.round(dailyNutrition.carbs)} / {carbsGoal}g</div>
+              <div className="macro-label">Glucides</div>
             </div>
-            <div className="macro-item">
-              <div className="macro-circle" style={{ background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)' }}>
-                <div style={{ textAlign: 'center', color: 'white' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800' }}>{Math.round(dailyNutrition.fats)}g</div>
-                  <div style={{ fontSize: '11px', opacity: '0.9', fontWeight: '600' }}>Lipides</div>
+            <div className="macro-item macro-fats glow-card glow-fat">
+              <div
+                className="ring macro-circle"
+                style={{ '--ring-pct': ringPct(dailyNutrition.fats, fatsGoal) }}
+              >
+                <div className="ring-content">
+                  <span className="ring-value">{Math.round(dailyNutrition.fats)}</span>
+                  <span className="ring-unit">g</span>
                 </div>
               </div>
               <div className="macro-value">{Math.round(dailyNutrition.fats)} / {fatsGoal}g</div>
+              <div className="macro-label">Lipides</div>
             </div>
           </div>
         </div>
 
         {/* Sections de repas */}
-        <MealSection title="Petit-déjeuner" emoji="🌅" mealType="breakfast" />
-        <MealSection title="Déjeuner" emoji="☀️" mealType="lunch" />
-        <MealSection title="Dîner" emoji="🌙" mealType="dinner" />
-        <MealSection title="Collations" emoji="🍎" mealType="snack" />
+        <MealSection title="Petit-déjeuner" emoji={<SunHorizon size={16} />} mealType="breakfast" />
+        <MealSection title="Déjeuner" emoji={<Sun size={16} />} mealType="lunch" />
+        <MealSection title="Dîner" emoji={<MoonStars size={16} />} mealType="dinner" />
+        <MealSection title="Collations" emoji={<Cookie size={16} />} mealType="snack" />
       </div>
 
       <AddFoodModal

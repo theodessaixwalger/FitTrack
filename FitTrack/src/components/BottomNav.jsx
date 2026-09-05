@@ -1,13 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Utensils, Dumbbell, User } from 'lucide-react';
+import { House, ForkKnife, Barbell, User } from '@phosphor-icons/react';
 
 function BottomNav() {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Accueil' },
-    { path: '/nutrition', icon: Utensils, label: 'Nutrition' },
-    { path: '/exercise', icon: Dumbbell, label: 'Exercices' },
+    { path: '/', icon: House, label: 'Accueil' },
+    { path: '/nutrition', icon: ForkKnife, label: 'Nutrition' },
+    { path: '/exercise', icon: Barbell, label: 'Exercices' },
     { path: '/profile', icon: User, label: 'Profil' },
   ];
 
@@ -16,15 +16,17 @@ function BottomNav() {
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
-        
+
         return (
           <Link
             key={item.path}
             to={item.path}
             className={`nav-item ${isActive ? 'active' : ''}`}
           >
-            <Icon size={24} />
-            <span>{item.label}</span>
+            <span className="nav-icon">
+              <Icon size={22} />
+            </span>
+            <span className="nav-label">{item.label}</span>
           </Link>
         );
       })}

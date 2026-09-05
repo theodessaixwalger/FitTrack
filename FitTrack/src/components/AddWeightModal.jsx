@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Save, Scale } from 'lucide-react';
+import { X, FloppyDisk, Scales } from '@phosphor-icons/react';
 import { saveWeightProgress } from '../services/progressService';
 
 function AddWeightModal({ onClose, onSave, currentWeight }) {
@@ -38,12 +38,12 @@ function AddWeightModal({ onClose, onSave, currentWeight }) {
               justifyContent: 'center',
               color: 'white'
             }}>
-              <Scale size={20} />
+              <Scales size={20} />
             </div>
             <h2>Enregistrer mon poids</h2>
           </div>
           <button className="close-btn" onClick={onClose}>
-            <X size={24} />
+            <X weight="bold" size={24} />
           </button>
         </div>
 
@@ -98,7 +98,7 @@ function AddWeightModal({ onClose, onSave, currentWeight }) {
                 </>
               ) : (
                 <>
-                  <Save size={20} />
+                  <FloppyDisk size={20} />
                   Enregistrer
                 </>
               )}

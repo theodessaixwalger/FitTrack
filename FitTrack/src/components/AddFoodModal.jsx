@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Plus, Search, ChefHat, Utensils } from 'lucide-react'
+import { X, Plus, MagnifyingGlass, CookingPot, ForkKnife } from '@phosphor-icons/react'
 import { searchFoods, addFood } from '../services/foodService'
 import { getRecipes, calculateRecipeNutrition } from '../services/recipeService'
 
@@ -118,16 +118,26 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
   if (!isOpen) return null
 
   const tabStyle = (tab) => ({
-    flex: 1,
-    padding: '10px',
-    border: 'none',
-    borderRadius: '12px',
+    flex: '1 1 0',
+    // Le bouton est lui-meme le conteneur flex : padding symetrique et
+    // contenu centre sur les deux axes, identique pour les deux onglets.
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '10px 12px',
+    minHeight: '38px',
+    lineHeight: 1,
+    borderRadius: '999px',
     fontSize: '14px',
     fontWeight: '700',
+    fontFamily: 'inherit',
     cursor: 'pointer',
     transition: 'all 0.2s',
-    background: activeTab === tab ? 'var(--primary)' : 'transparent',
-    color: activeTab === tab ? 'white' : 'var(--text-secondary)'
+    // Meme traitement que la pilule active de la nav du bas :
+    // fond accent tres dilue + texte lime, plutot que du blanc sur lime.
+    background: activeTab === tab ? 'var(--accent-ghost)' : 'transparent',
+    border: activeTab === tab ? '1px solid var(--accent-line)' : '1px solid transparent',
+    color: activeTab === tab ? 'var(--accent)' : 'var(--text-secondary)'
   })
 
   return createPortal(
@@ -179,28 +189,35 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
               cursor: 'pointer'
             }}
           >
-            <X size={20} />
+            <X weight="bold" size={20} />
           </button>
         </div>
 
         {/* Tabs - masqués quand on saisit une quantité */}
         {!showAddForm && !selectedFood && (
           <div style={{
-            padding: '12px 20px 0',
+            // Inset uniforme sur les 4 cotes : les pilules etaient collees
+            // au bord bas (padding 12px en haut, 0 en bas).
+            padding: '5px',
             display: 'flex',
-            gap: '6px',
+            alignItems: 'stretch',
+            gap: '5px',
             background: 'var(--bg-secondary)',
-            borderRadius: '16px',
+            borderRadius: '999px',
             margin: '12px 20px 0',
           }}>
             <button style={tabStyle('food')} onClick={() => setActiveTab('food')}>
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Utensils size={14} /> Aliments
+              {/* Libelle dans son propre span : l'espacement vient du gap,
+                  pas d'un espace de texte a la largeur variable. */}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: 1 }}>
+                <ForkKnife size={14} />
+                <span>Aliments</span>
               </span>
             </button>
             <button style={tabStyle('recipe')} onClick={() => setActiveTab('recipe')}>
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <ChefHat size={14} /> Recettes
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: 1 }}>
+                <CookingPot size={14} />
+                <span>Recettes</span>
               </span>
             </button>
           </div>
@@ -426,7 +443,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                 position: 'relative',
                 marginBottom: '20px'
               }}>
-                <Search
+                <MagnifyingGlass
                   size={20}
                   style={{
                     position: 'absolute',
@@ -441,18 +458,8 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   placeholder="Rechercher un aliment..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px 14px 48px',
-                    borderRadius: '16px',
-                    border: '2px solid var(--border-light)',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    outline: 'none',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--border-light)'}
+                  className="search-field"
+                  style={{ padding: '14px 16px 14px 48px' }}
                 />
               </div>
 
@@ -507,7 +514,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                 className="btn"
                 style={{ marginTop: '20px' }}
               >
-                <Plus size={20} />
+                <Plus weight="bold" size={20} />
                 Créer un nouvel aliment
               </button>
             </>
@@ -516,7 +523,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
             <div>
               {/* Barre de recherche recettes */}
               <div style={{ position: 'relative', marginBottom: '16px' }}>
-                <Search size={18} style={{
+                <MagnifyingGlass size={18} style={{
                   position: 'absolute', left: '14px', top: '50%',
                   transform: 'translateY(-50%)', color: 'var(--text-tertiary)'
                 }} />
@@ -525,15 +532,8 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   placeholder="Rechercher une recette..."
                   value={recipeSearch}
                   onChange={e => setRecipeSearch(e.target.value)}
-                  style={{
-                    width: '100%', padding: '12px 14px 12px 44px',
-                    borderRadius: '14px', border: '2px solid var(--border-light)',
-                    fontSize: '15px', fontWeight: '500', outline: 'none',
-                    transition: 'all 0.2s ease',
-                    background: 'var(--bg-secondary)', color: 'var(--text-primary)'
-                  }}
-                  onFocus={e => e.target.style.borderColor = 'var(--primary)'}
-                  onBlur={e => e.target.style.borderColor = 'var(--border-light)'}
+                  className="search-field"
+                  style={{ padding: '12px 14px 12px 44px' }}
                 />
               </div>
 
@@ -576,7 +576,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                          <ChefHat size={16} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                          <CookingPot size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
                           <span style={{ fontWeight: '800', fontSize: '15px' }}>{recipe.name}</span>
                         </div>
                         {recipe.description && (

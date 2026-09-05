@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Target, Award, TrendingUp, Settings, Bell, Shield, HelpCircle, LogOut, ChevronRight, Crown, Calendar, Edit2, Save, X, Plus, Trash2} from "lucide-react";
+import { User, Target, Medal, TrendUp, Gear, Bell, ShieldCheck, Question, SignOut, CaretRight, Crown, Calendar, PencilSimple, FloppyDisk, X, Plus, Trash } from '@phosphor-icons/react';
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getUserProfile, updateUserProfile } from "../services/profileService";
@@ -190,9 +190,11 @@ function Profile() {
       <div
         className="page-header"
         style={{
-          background: "var(--gradient-primary)",
-          color: "white",
-          borderBottom: "none",
+          // Fond sombre + halo lime en second plan, au lieu de l'aplat lime.
+          background:
+            "radial-gradient(120% 90% at 85% -10%, rgba(212,255,63,0.16) 0%, transparent 60%), var(--gradient-surface)",
+          color: "var(--text-primary)",
+          borderBottom: "1px solid var(--accent-line)",
         }}
       >
         <div
@@ -205,18 +207,18 @@ function Profile() {
         >
           <div
             style={{
-              width: "80px",
-              height: "80px",
+              width: "76px",
+              height: "76px",
               borderRadius: "50%",
-              background: "white",
+              background: "var(--accent)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "36px",
+              fontSize: "32px",
               fontWeight: "800",
-              color: "#FF6B35",
-              border: "4px solid rgba(255,255,255,0.3)",
-              boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
+              color: "var(--ink)",
+              flexShrink: 0,
+              boxShadow: "var(--glow-accent)",
             }}
           >
             {initials}
@@ -225,7 +227,7 @@ function Profile() {
             <h1 style={{ marginBottom: "6px" }}>{fullName}</h1>
             <p
               style={{
-                opacity: "0.9",
+                color: "var(--text-secondary)",
                 fontSize: "14px",
                 fontWeight: "500",
               }}
@@ -235,26 +237,10 @@ function Profile() {
           </div>
           <button
             onClick={handleOpenModal}
-            style={{
-              background: "rgba(255,255,255,0.2)",
-              border: "none",
-              borderRadius: "12px",
-              padding: "12px",
-              color: "white",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onMouseOver={(e) =>
-              (e.currentTarget.style.background = "rgba(255,255,255,0.3)")
-            }
-            onMouseOut={(e) =>
-              (e.currentTarget.style.background = "rgba(255,255,255,0.2)")
-            }
+            className="icon-btn icon-btn-ghost"
+            title="Modifier mon profil"
           >
-            <Edit2 size={20} />
+            <PencilSimple size={20} />
           </button>
         </div>
 
@@ -264,10 +250,10 @@ function Profile() {
             gridTemplateColumns: "1fr 1fr 1fr",
             gap: "12px",
             marginTop: "20px",
-            padding: "20px",
-            background: "rgba(255,255,255,0.15)",
-            borderRadius: "16px",
-            backdropFilter: "blur(10px)",
+            padding: "18px",
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-lg)",
           }}
         >
           <div style={{ textAlign: "center" }}>
@@ -275,6 +261,8 @@ function Profile() {
               style={{
                 fontSize: "24px",
                 fontWeight: "800",
+                color: "var(--accent)",
+                letterSpacing: "-0.5px",
                 marginBottom: "4px",
               }}
             >
@@ -282,9 +270,9 @@ function Profile() {
             </div>
             <div
               style={{
-                fontSize: "12px",
-                opacity: "0.9",
-                fontWeight: "600",
+                fontSize: "11px",
+                color: "var(--text-tertiary)",
+                fontWeight: "700",
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
               }}
@@ -303,6 +291,8 @@ function Profile() {
               style={{
                 fontSize: "24px",
                 fontWeight: "800",
+                color: "var(--accent)",
+                letterSpacing: "-0.5px",
                 marginBottom: "4px",
               }}
             >
@@ -310,9 +300,9 @@ function Profile() {
             </div>
             <div
               style={{
-                fontSize: "12px",
-                opacity: "0.9",
-                fontWeight: "600",
+                fontSize: "11px",
+                color: "var(--text-tertiary)",
+                fontWeight: "700",
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
               }}
@@ -325,6 +315,8 @@ function Profile() {
               style={{
                 fontSize: "24px",
                 fontWeight: "800",
+                color: "var(--accent)",
+                letterSpacing: "-0.5px",
                 marginBottom: "4px",
               }}
             >
@@ -332,9 +324,9 @@ function Profile() {
             </div>
             <div
               style={{
-                fontSize: "12px",
-                opacity: "0.9",
-                fontWeight: "600",
+                fontSize: "11px",
+                color: "var(--text-tertiary)",
+                fontWeight: "700",
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
               }}
@@ -347,11 +339,9 @@ function Profile() {
 
       <div className="page-content">
         <div
-          className="card"
+          className="card glow-card glow-accent"
           style={{
-            background: "var(--gradient-primary-light)",
-            border: "none",
-            color: "white",
+            color: "var(--text-primary)",
           }}
         >
           <div className="card-body">
@@ -371,7 +361,7 @@ function Profile() {
                     marginBottom: "8px",
                   }}
                 >
-                  <Crown size={24} />
+                  <Crown size={24} style={{ color: "var(--accent)" }} />
                   <span
                     style={{
                       fontSize: "16px",
@@ -397,11 +387,6 @@ function Profile() {
             </div>
             <button
               className="btn"
-              style={{
-                background: "white",
-                color: "var(--primary-light)",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-              }}
             >
               Passer à Premium
             </button>
@@ -433,7 +418,7 @@ function Profile() {
                 whiteSpace: "nowrap",
               }}
             >
-              <Plus size={16} />
+              <Plus weight="bold" size={16} />
               Ajouter
             </button>
           </div>
@@ -452,71 +437,19 @@ function Profile() {
               >
                 <button
                   onClick={() => setChartPeriod(7)}
-                  style={{
-                    flex: 1,
-                    padding: "8px 16px",
-                    border: "none",
-                    borderRadius: "8px",
-                    background: chartPeriod === 7 ? "white" : "transparent",
-                    color:
-                      chartPeriod === 7
-                        ? "var(--primary)"
-                        : "var(--text-secondary)",
-                    fontWeight: chartPeriod === 7 ? "700" : "600",
-                    fontSize: "14px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow:
-                      chartPeriod === 7 ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
-                  }}
+                  className={`seg-btn ${chartPeriod === 7 ? "active" : ""}`}
                 >
                   7 jours
                 </button>
                 <button
                   onClick={() => setChartPeriod(30)}
-                  style={{
-                    flex: 1,
-                    padding: "8px 16px",
-                    border: "none",
-                    borderRadius: "8px",
-                    background: chartPeriod === 30 ? "white" : "transparent",
-                    color:
-                      chartPeriod === 30
-                        ? "var(--primary)"
-                        : "var(--text-secondary)",
-                    fontWeight: chartPeriod === 30 ? "700" : "600",
-                    fontSize: "14px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow:
-                      chartPeriod === 30
-                        ? "0 2px 8px rgba(0,0,0,0.1)"
-                        : "none",
-                  }}
+                  className={`seg-btn ${chartPeriod === 30 ? "active" : ""}`}
                 >
                   30 jours
                 </button>
                 <button
                   onClick={() => setChartPeriod(90)}
-                  style={{
-                    flex: 1,
-                    padding: "8px 16px",
-                    border: "none",
-                    borderRadius: "8px",
-                    background: chartPeriod === 90 ? "white" : "transparent",
-                    color:
-                      chartPeriod === 90
-                        ? "var(--primary)"
-                        : "var(--text-secondary)",
-                    fontWeight: chartPeriod === 90 ? "700" : "600",
-                    fontSize: "14px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    boxShadow:
-                      chartPeriod === 90
-                        ? "0 2px 8px rgba(0,0,0,0.1)"
-                        : "none",
-                  }}
+                  className={`seg-btn ${chartPeriod === 90 ? "active" : ""}`}
                 >
                   3 mois
                 </button>
@@ -710,7 +643,7 @@ function Profile() {
                                   style={{ width: "16px", height: "16px" }}
                                 ></div>
                               ) : (
-                                <Trash2 size={16} />
+                                <Trash size={16} />
                               )}
                             </button>
                           </div>
@@ -920,11 +853,11 @@ function Profile() {
                       color: "var(--primary)",
                     }}
                   >
-                    <Settings size={20} />
+                    <Gear size={20} />
                   </div>
                   <span>Paramètres généraux</span>
                 </div>
-                <ChevronRight size={20} color="var(--text-tertiary)" />
+                <CaretRight weight="bold" size={20} color="var(--text-tertiary)" />
               </div>
 
               <div className="menu-item">
@@ -951,7 +884,7 @@ function Profile() {
                   </div>
                   <span>Notifications</span>
                 </div>
-                <ChevronRight size={20} color="var(--text-tertiary)" />
+                <CaretRight weight="bold" size={20} color="var(--text-tertiary)" />
               </div>
 
               <div 
@@ -978,11 +911,11 @@ function Profile() {
                       color: "#10B981",
                     }}
                   >
-                    <Shield size={20} />
+                    <ShieldCheck size={20} />
                   </div>
                   <span>Confidentialité & Sécurité</span>
                 </div>
-                <ChevronRight size={20} color="var(--text-tertiary)" />
+                <CaretRight weight="bold" size={20} color="var(--text-tertiary)" />
               </div>
 
               <div className="menu-item" style={{ borderBottom: "none" }}>
@@ -1005,11 +938,11 @@ function Profile() {
                       color: "var(--warning)",
                     }}
                   >
-                    <HelpCircle size={20} />
+                    <Question size={20} />
                   </div>
                   <span>Aide & Support</span>
                 </div>
-                <ChevronRight size={20} color="var(--text-tertiary)" />
+                <CaretRight weight="bold" size={20} color="var(--text-tertiary)" />
               </div>
             </div>
           </div>
@@ -1024,7 +957,7 @@ function Profile() {
             marginBottom: "20px",
           }}
         >
-          <LogOut size={20} />
+          <SignOut size={20} />
           Se déconnecter
         </button>
 
@@ -1047,7 +980,7 @@ function Profile() {
             <div className="edit-modal-header">
               <h2>Modifier mon profil</h2>
               <button className="close-btn" onClick={handleCloseModal}>
-                <X size={24} />
+                <X weight="bold" size={24} />
               </button>
             </div>
 
@@ -1177,7 +1110,7 @@ function Profile() {
                   </>
                 ) : (
                   <>
-                    <Save size={20} />
+                    <FloppyDisk size={20} />
                     Enregistrer
                   </>
                 )}

@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
-import { X, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
+import { X, TrendUp, CaretDown, CaretUp, Fire, Barbell, Lightning, Target } from '@phosphor-icons/react'
 import { getExerciseHistory, suggestWeightIncrease } from '../services/exerciceService'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
+// Le service renvoie un nom d'icone ; la resolution se fait ici pour
+// qu'il n'ait pas a dependre de React.
+const SUGGESTION_ICONS = { Fire, Barbell, Lightning, Target }
 
 function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
   const [history, setHistory] = useState([])
@@ -77,7 +81,7 @@ function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
         <div className="modal-header">
           <h2>📊 Historique - {exerciseName}</h2>
           <button className="modal-close" onClick={onClose}>
-            <X size={24} />
+            <X weight="bold" size={24} />
           </button>
         </div>
 
@@ -134,7 +138,10 @@ function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
                   marginBottom: '24px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
-                    <TrendingUp size={24} color={suggestion.color} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    {(() => {
+                      const SuggestionIcon = SUGGESTION_ICONS[suggestion.icon] || TrendUp
+                      return <SuggestionIcon size={24} color={suggestion.color} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    })()}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: '700', fontSize: '18px', marginBottom: '8px', color: suggestion.color }}>
                         Suggestion : {suggestion.weight} {suggestion.unit}
@@ -171,35 +178,54 @@ function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
                   }}>
                     <ResponsiveContainer width="100%" height={350}>
                       <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                        <XAxis 
-                          dataKey="date" 
-                          stroke="var(--text-secondary)"
-                          style={{ fontSize: '13px' }}
-                          tick={{ fill: 'var(--text-secondary)' }}
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="var(--border)"
+                          vertical={false}
                         />
-                        <YAxis 
-                          stroke="var(--text-secondary)"
-                          style={{ fontSize: '13px' }}
-                          tick={{ fill: 'var(--text-secondary)' }}
-                          width={50}
+                        <XAxis
+                          dataKey="date"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'var(--text-tertiary)', fontSize: 11, fontWeight: 600 }}
+                          dy={6}
                         />
-                        <Tooltip 
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fill: 'var(--text-tertiary)', fontSize: 11, fontWeight: 600 }}
+                          width={44}
+                        />
+                        <Tooltip
                           contentStyle={{
-                            background: 'var(--surface)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '12px',
-                            padding: '12px'
+                            background: 'var(--surface-elevated)',
+                            border: '1px solid var(--accent-line)',
+                            borderRadius: 'var(--r-md)',
+                            padding: '11px 14px',
+                            boxShadow: 'var(--shadow-lg)'
                           }}
-                          labelStyle={{ fontWeight: '600', marginBottom: '4px' }}
+                          labelStyle={{
+                            fontWeight: '700',
+                            fontSize: '11px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.6px',
+                            color: 'var(--text-tertiary)',
+                            marginBottom: '5px'
+                          }}
+                          itemStyle={{ color: 'var(--accent)', fontWeight: '800' }}
+                          cursor={{ stroke: 'var(--accent-line)', strokeWidth: 1, strokeDasharray: '4 4' }}
                         />
-                        <Line 
-                          type="monotone" 
-                          dataKey="weight" 
-                          stroke="var(--primary)" 
+                        <Line
+                          type="monotone"
+                          dataKey="weight"
+                          stroke="var(--accent)"
                           strokeWidth={3}
-                          dot={{ fill: 'var(--primary)', r: 5 }}
-                          activeDot={{ r: 7 }}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          dot={{ r: 4, fill: 'var(--accent)', stroke: 'var(--bg)', strokeWidth: 2 }}
+                          activeDot={{ r: 7, fill: 'var(--accent)', stroke: 'var(--bg)', strokeWidth: 3 }}
+                          animationDuration={600}
+                          animationEasing="ease-out"
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -296,7 +322,7 @@ function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
                       marginTop: '8px'
                     }}
                   >
-                    <ChevronDown size={20} />
+                    <CaretDown weight="bold" size={20} />
                     Voir plus ({history.length - displayLimit} restantes)
                   </button>
                 )}
@@ -321,7 +347,7 @@ function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
                       marginTop: '8px'
                     }}
                   >
-                    <ChevronUp size={20} />
+                    <CaretUp weight="bold" size={20} />
                     Voir moins
                   </button>
                 )}

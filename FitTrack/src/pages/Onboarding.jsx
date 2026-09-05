@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { FilePlus, Fire } from '@phosphor-icons/react'
 import { saveUserProfile } from '../services/profileService'
 import '../index.css'
 
@@ -141,7 +142,7 @@ function Onboarding() {
   }
 
   const fitnessGoals = [
-    { value: 'lose_weight', label: 'Perte de poids', icon: '🔥', desc: 'Brûler les graisses' },
+    { value: 'lose_weight', label: 'Perte de poids', icon: <Fire size={38} />, desc: 'Brûler les graisses' },
     { value: 'gain_muscle', label: 'Prise de masse', icon: '💪', desc: 'Gagner du muscle' },
     { value: 'maintain', label: 'Maintien', icon: '⚖️', desc: 'Stabiliser' },
     { value: 'recomp', label: 'Recomposition', icon: '⚡', desc: 'Transformer' }
@@ -152,7 +153,7 @@ function Onboarding() {
     { value: 'light', label: 'Léger', icon: '🚶', desc: '1-3 jours/semaine' },
     { value: 'moderate', label: 'Modéré', icon: '🏃', desc: '3-5 jours/semaine' },
     { value: 'active', label: 'Actif', icon: '🏋️', desc: '6-7 jours/semaine' },
-    { value: 'very_active', label: 'Très actif', icon: '🔥', desc: 'Entraînement intensif' }
+    { value: 'very_active', label: 'Très actif', icon: <Fire size={26} />, desc: 'Entraînement intensif' }
   ]
 
   const renderStep1 = () => (
@@ -391,12 +392,7 @@ function Onboarding() {
       <div className="onboarding-card">
         <div className="onboarding-header">
           <div className="app-logo">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="12" y1="18" x2="12" y2="12"/>
-              <line x1="9" y1="15" x2="15" y2="15"/>
-            </svg>
+            <FilePlus size={28} />
           </div>
           <h1 className="app-title">FitnessTracker</h1>
           <p className="onboarding-subtitle">Configuration de votre profil</p>

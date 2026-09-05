@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Edit2, Calendar, TrendingUp, BarChart3 } from "lucide-react";
+import { Plus, Trash, PencilSimple, Calendar, TrendUp, ChartBar, CaretRight } from '@phosphor-icons/react';
 import { supabase } from "../config/supabase";
 import {
   getActiveProgram,
@@ -229,11 +229,15 @@ function Training() {
             <button
               onClick={() => setExpandedDay(expandedDay === day.id ? null : day.id)}
               style={{
-                background: "transparent",
-                border: "none",
-                color: "var(--text-primary)",
+                background: "var(--accent-ghost)",
+                border: "1px solid var(--accent-line)",
+                color: "var(--accent)",
                 cursor: "pointer",
-                padding: "4px",
+                width: "26px",
+                height: "26px",
+                flexShrink: 0,
+                padding: 0,
+                borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -242,9 +246,7 @@ function Training() {
               }}
               title={expandedDay === day.id ? "Cacher les exercices" : "Afficher les exercices"}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
+              <CaretRight weight="bold" size={14} />
             </button>
 
             <h2 className="section-title">
@@ -258,68 +260,18 @@ function Training() {
             <button
               onClick={() => openEditDay(day)}
               disabled={deletingDay === day.id}
-              style={{
-                background: "var(--surface-elevated)",
-                color: "var(--text-secondary)",
-                border: "none",
-                borderRadius: "12px",
-                width: "36px",
-                height: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = "var(--surface-hover)";
-                e.currentTarget.style.color = "var(--text-primary)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = "var(--surface-elevated)";
-                e.currentTarget.style.color = "var(--text-secondary)";
-              }}
+              className="icon-btn icon-btn-ghost"
+              title="Modifier le jour"
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
+              <PencilSimple size={18} />
             </button>
 
             {/* Bouton Supprimer */}
             <button
               onClick={() => handleDeleteDay(day.id)}
               disabled={deletingDay === day.id}
-              style={{
-                background: "transparent",
-                color: "#EF4444",
-                border: "none",
-                borderRadius: "12px",
-                width: "36px",
-                height: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) => {
-                if (deletingDay !== day.id) {
-                  e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
-                }
-              }}
-              onMouseOut={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
+              className="icon-btn icon-btn-ghost is-danger"
+              title="Supprimer le jour"
             >
               {deletingDay === day.id ? (
                 <div
@@ -333,7 +285,7 @@ function Training() {
                   }}
                 />
               ) : (
-                <Trash2 size={18} />
+                <Trash size={18} />
               )}
             </button>
 
@@ -344,26 +296,10 @@ function Training() {
                 setShowNewExercise(true);
               }}
               disabled={deletingDay === day.id}
-              style={{
-                background: "var(--primary)",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                width: "36px",
-                height: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "scale(1.05)")
-              }
-              onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              className="icon-btn icon-btn-ghost is-accent"
+              title="Ajouter un exercice"
             >
-              <Plus size={20} />
+              <Plus weight="bold" size={20} />
             </button>
           </div>
         </div>
@@ -420,7 +356,7 @@ function Training() {
                             height: "28px",
                             borderRadius: "8px",
                             background: "var(--primary)",
-                            color: "white",
+                            color: "var(--ink)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -453,17 +389,15 @@ function Training() {
                           </div>
 
                           {/* Chevron */}
-                          <svg
-                            width="18" height="18" viewBox="0 0 24 24"
-                            fill="none" stroke="var(--text-secondary)" strokeWidth="2"
+                          <CaretRight weight="bold"
+                            size={18}
+                            color="var(--text-secondary)"
                             style={{
                               flexShrink: 0,
                               transition: "transform 0.2s ease",
                               transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
                             }}
-                          >
-                            <polyline points="9 18 15 12 9 6" />
-                          </svg>
+                          />
                         </div>
 
                         {/* Contenu déroulé */}
@@ -518,31 +452,32 @@ function Training() {
                               {/* Historique */}
                               <button
                                 onClick={(e) => { e.stopPropagation(); setSelectedExerciseForHistory(exercise.exercise_name); setShowHistory(true); }}
-                                style={{ background: "transparent", border: "none", color: "var(--primary)", cursor: "pointer", padding: "6px 10px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: "600" }}
+                                className="row-action is-accent"
                                 title="Voir l'historique"
                               >
-                                <BarChart3 size={15} /> Historique
+                                <ChartBar size={15} /> Historique
                               </button>
 
                               {/* Modifier */}
                               <button
                                 onClick={(e) => { e.stopPropagation(); setEditingExercise(exercise); setShowEditModal(true); }}
-                                style={{ background: "var(--surface-elevated)", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "6px 10px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: "600" }}
+                                className="row-action"
                                 title="Modifier"
                               >
-                                <Edit2 size={15} /> Modifier
+                                <PencilSimple size={15} /> Modifier
                               </button>
 
                               {/* Supprimer */}
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDeleteExercise(exercise.id); }}
                                 disabled={deletingExercise === exercise.id}
-                                style={{ background: "transparent", border: "none", color: "#EF4444", cursor: "pointer", padding: "6px 10px", borderRadius: "8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: "600", opacity: deletingExercise === exercise.id ? 0.5 : 1 }}
+                                className="row-action is-danger"
+                                style={{ opacity: deletingExercise === exercise.id ? 0.5 : 1 }}
                                 title="Supprimer"
                               >
                                 {deletingExercise === exercise.id
                                   ? <div style={{ width: "15px", height: "15px", border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
-                                  : <Trash2 size={15} />
+                                  : <Trash size={15} />
                                 }
                                 Supprimer
                               </button>
@@ -646,7 +581,7 @@ function Training() {
               Commencez par créer votre premier programme d'entraînement
             </p>
             <button className="btn" onClick={() => setShowNewProgram(true)}>
-              <Plus size={20} />
+              <Plus weight="bold" size={20} />
               Créer un programme
             </button>
           </div>
@@ -700,12 +635,7 @@ function Training() {
 
       <div className="page-content">
         {/* Hero Card - Programme actif */}
-        <div
-          className="hero-card"
-          style={{
-            background: "var(--gradient-primary)",
-          }}
-        >
+        <div className="hero-card glow-card glow-accent">
           <div className="label">Programme actif</div>
           <div
             className="value"
@@ -717,9 +647,9 @@ function Training() {
             style={{
               display: "flex",
               gap: "24px",
-              marginTop: "24px",
-              paddingTop: "20px",
-              borderTop: "1px solid rgba(255,255,255,0.2)",
+              marginTop: "20px",
+              paddingTop: "18px",
+              borderTop: "1px solid var(--border)",
             }}
           >
             <div>
@@ -733,7 +663,7 @@ function Training() {
                 {days.length}
               </div>
               <div
-                style={{ fontSize: "13px", opacity: 0.9, fontWeight: "600" }}
+                style={{ fontSize: "12px", color: "var(--text-tertiary)", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.6px" }}
               >
                 Jours
               </div>
@@ -749,7 +679,7 @@ function Training() {
                 {getTotalExercises()}
               </div>
               <div
-                style={{ fontSize: "13px", opacity: 0.9, fontWeight: "600" }}
+                style={{ fontSize: "12px", color: "var(--text-tertiary)", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.6px" }}
               >
                 Exercices
               </div>
@@ -760,14 +690,11 @@ function Training() {
         {/* Bouton Ajouter un jour */}
         <div className="section">
           <button
-            className="btn"
+            className="btn btn-outline"
             onClick={() => setShowNewDay(true)}
-            style={{
-              width: "100%",
-              background: "var(--gradient-primary-light)",
-            }}
+            style={{ width: "100%" }}
           >
-            <Plus size={20} />
+            <Plus weight="bold" size={20} />
             Ajouter un jour d'entraînement
           </button>
         </div>

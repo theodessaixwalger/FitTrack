@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Envelope, Lock, User, Eye, EyeSlash } from '@phosphor-icons/react';
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -200,7 +200,7 @@ function Auth() {
               Email
             </label>
             <div style={{ position: 'relative' }}>
-              <Mail 
+              <Envelope 
                 size={20} 
                 style={{
                   position: 'absolute',
@@ -284,7 +284,7 @@ function Auth() {
                   padding: 0
                 }}
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
               </button>
             </div>
           </div>

@@ -5,7 +5,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { getUserProfile } from './services/profileService';
 import MobileOnly from './components/MobileOnly';
 import Layout from './components/Layout';
-import Splash from './pages/Splash';
 import Home from './pages/Home';
 import Nutrition from './pages/Nutrition';
 import Exercise from './pages/Exercise';
@@ -24,13 +23,13 @@ function LoadingSpinner() {
       justifyContent: 'center',
       alignItems: 'center',
       height: '100vh',
-      backgroundColor: '#0f0f23'
+      backgroundColor: '#0D0D0D'
     }}>
       <div style={{
         width: '50px',
         height: '50px',
-        border: '5px solid #1a1a2e',
-        borderTop: '5px solid #667eea',
+        border: '4px solid rgba(255,255,255,0.08)',
+        borderTop: '4px solid #D4FF3F',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
       }} />
@@ -109,74 +108,44 @@ function OnboardingRoute({ children }) {
   return children;
 }
 
-// ✅ Nouveau : Composant pour gérer le Splash Screen
-function SplashRoute({ children }) {
-  const [showSplash, setShowSplash] = useState(true);
-
-  useEffect(() => {
-    // Vérifier si le splash a déjà été vu dans cette session
-    const splashShown = sessionStorage.getItem('splashShown');
-
-    if (splashShown) {
-      setShowSplash(false);
-    } else {
-      // Marquer le splash comme vu après 3 secondes
-      const timer = setTimeout(() => {
-        sessionStorage.setItem('splashShown', 'true');
-        setShowSplash(false);
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  if (showSplash) {
-    return <Splash />;
-  }
-
-  return children;
-}
-
 function App() {
   return (
     <MobileOnly>
       <BrowserRouter>
         <AuthProvider>
-          <SplashRoute>
-            <Routes>
-              {/* Route publique */}
-              <Route path="/auth" element={
-                <PublicRoute>
-                  <Auth />
-                </PublicRoute>
-              } />
+          <Routes>
+            {/* Route publique */}
+            <Route path="/auth" element={
+              <PublicRoute>
+                <Auth />
+              </PublicRoute>
+            } />
 
-              {/* ✅ Route d'onboarding */}
-              <Route path="/onboarding" element={
-                <OnboardingRoute>
-                  <Onboarding />
-                </OnboardingRoute>
-              } />
+            {/* ✅ Route d'onboarding */}
+            <Route path="/onboarding" element={
+              <OnboardingRoute>
+                <Onboarding />
+              </OnboardingRoute>
+            } />
 
-              {/* Routes protégées (nécessitent authentification + profil complété) */}
-              <Route element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }>
-                <Route path="/" element={<Home />} />
-                <Route path="/nutrition" element={<Nutrition />} />
-                <Route path="/exercise" element={<Exercise />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/recipes" element={<Recipes />} />
-              </Route>
+            {/* Routes protégées (nécessitent authentification + profil complété) */}
+            <Route element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
+              <Route path="/" element={<Home />} />
+              <Route path="/nutrition" element={<Nutrition />} />
+              <Route path="/exercise" element={<Exercise />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/recipes" element={<Recipes />} />
+            </Route>
 
-              {/* Redirection par défaut */}
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </SplashRoute>
+            {/* Redirection par défaut */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </MobileOnly>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Plus, Search, Trash2, ChefHat, Pencil } from 'lucide-react'
+import { X, Plus, MagnifyingGlass, Trash, ChefHat, PencilSimple } from '@phosphor-icons/react'
 import { searchFoods } from '../services/foodService'
 import { createRecipe, updateRecipe, clearRecipeIngredients, addIngredientToRecipe, calculateRecipeNutrition } from '../services/recipeService'
 import { useAuth } from '../context/AuthContext'
@@ -24,7 +24,6 @@ function CreateRecipeModal({ isOpen, onClose, onCreated, recipe = null }) {
             setStep(1); setName(''); setDescription(''); setServings(1)
             setIngredients([]); setSearchQuery(''); setSearchResults([]); setError('')
         } else if (isOpen && recipe) {
-            // Pré-remplir avec les données existantes
             setName(recipe.name || '')
             setDescription(recipe.description || '')
             setServings(recipe.servings || 1)
@@ -155,7 +154,7 @@ function CreateRecipeModal({ isOpen, onClose, onCreated, recipe = null }) {
                         width: '36px', height: '36px', display: 'flex', alignItems: 'center',
                         justifyContent: 'center', cursor: 'pointer'
                     }}>
-                        <X size={18} />
+                        <X weight="bold" size={18} />
                     </button>
                 </div>
 
@@ -224,7 +223,7 @@ function CreateRecipeModal({ isOpen, onClose, onCreated, recipe = null }) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {/* Recherche */}
                             <div style={{ position: 'relative' }}>
-                                <Search size={16} style={{
+                                <MagnifyingGlass size={16} style={{
                                     position: 'absolute', left: '14px', top: '50%',
                                     transform: 'translateY(-50%)', color: 'var(--text-secondary)'
                                 }} />
@@ -265,7 +264,7 @@ function CreateRecipeModal({ isOpen, onClose, onCreated, recipe = null }) {
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px' }}>
                                                 <span>{food.calories} kcal/{food.serving_size}{food.serving_unit}</span>
-                                                <Plus size={16} style={{ color: 'var(--primary)' }} />
+                                                <Plus weight="bold" size={16} style={{ color: 'var(--primary)' }} />
                                             </div>
                                         </button>
                                     ))}
@@ -312,7 +311,7 @@ function CreateRecipeModal({ isOpen, onClose, onCreated, recipe = null }) {
                                                     cursor: 'pointer', padding: '4px', borderRadius: '6px',
                                                     display: 'flex', alignItems: 'center'
                                                 }}>
-                                                    <Trash2 size={16} />
+                                                    <Trash size={16} />
                                                 </button>
                                             </div>
                                         </div>

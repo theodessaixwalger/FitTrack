@@ -195,7 +195,8 @@ export async function suggestWeightIncrease(userId, exerciseName) {
       weight: lastWeight + 2.5,
       unit: lastUnit,
       confidence: 'high',
-      reason: `🔥 Excellent ! ${successRate.toFixed(0)}% de réussite sur vos dernières séances. Augmentez de 2.5${lastUnit} !`,
+      icon: 'Fire',
+      reason: `Excellent ! ${successRate.toFixed(0)}% de réussite sur vos dernières séances. Augmentez de 2.5${lastUnit} !`,
       color: 'var(--success)'
     }
   } else if (successRate >= 60 && trend >= 0) {
@@ -204,7 +205,8 @@ export async function suggestWeightIncrease(userId, exerciseName) {
       weight: lastWeight + 1.25,
       unit: lastUnit,
       confidence: 'medium',
-      reason: `💪 Bien joué ! ${successRate.toFixed(0)}% de réussite. Essayez +1.25${lastUnit} pour progresser.`,
+      icon: 'Barbell',
+      reason: `Bien joué ! ${successRate.toFixed(0)}% de réussite. Essayez +1.25${lastUnit} pour progresser.`,
       color: 'var(--primary)'
     }
   } else if (successRate >= 40) {
@@ -213,7 +215,8 @@ export async function suggestWeightIncrease(userId, exerciseName) {
       weight: lastWeight,
       unit: lastUnit,
       confidence: 'low',
-      reason: `⚡ Continuez à ${lastWeight}${lastUnit} pour consolider votre technique.`,
+      icon: 'Lightning',
+      reason: `Continuez à ${lastWeight}${lastUnit} pour consolider votre technique.`,
       color: 'var(--warning)'
     }
   } else {
@@ -222,7 +225,8 @@ export async function suggestWeightIncrease(userId, exerciseName) {
       weight: Math.max(lastWeight - 2.5, 0),
       unit: lastUnit,
       confidence: 'low',
-      reason: `🎯 Réduisez à ${Math.max(lastWeight - 2.5, 0)}${lastUnit} pour mieux maîtriser le mouvement.`,
+      icon: 'Target',
+      reason: `Réduisez à ${Math.max(lastWeight - 2.5, 0)}${lastUnit} pour mieux maîtriser le mouvement.`,
       color: 'var(--info)'
     }
   }
@@ -330,24 +334,26 @@ export async function deleteCustomExercise(exerciseId) {
   }
 }
 
-// Obtenir l'icône du groupe musculaire
+// Obtenir l'icône du groupe musculaire.
+// Renvoie un NOM d'icône Phosphor, pas un composant : ce service reste
+// sans dépendance React, c'est la couche de rendu qui résout le nom.
 export function getMuscleGroupIcon(muscleGroup) {
   const icons = {
-    'Pectoraux': '💪',
-    'Dos': '🦾',
-    'Jambes': '🦵',
-    'Épaules': '🏋️',
-    'Biceps': '💪',
-    'Triceps': '💪',
-    'Abdominaux': '🔥',
-    'Cardio': '❤️',
-    'Fessiers': '🍑',
-    'Mollets': '🦵',
-    'Avant-bras': '✊',
-    'Trapèzes': '🦾'
+    'Pectoraux': 'Barbell',
+    'Dos': 'PersonArmsSpread',
+    'Jambes': 'PersonSimpleRun',
+    'Épaules': 'Barbell',
+    'Biceps': 'BoxingGlove',
+    'Triceps': 'BoxingGlove',
+    'Abdominaux': 'Fire',
+    'Cardio': 'Heartbeat',
+    'Fessiers': 'PersonSimple',
+    'Mollets': 'Sneaker',
+    'Avant-bras': 'HandFist',
+    'Trapèzes': 'PersonArmsSpread'
   }
-  
-  return icons[muscleGroup] || '💪'
+
+  return icons[muscleGroup] || 'Barbell'
 }
 
 // Initialiser des exercices par défaut pour un nouvel utilisateur

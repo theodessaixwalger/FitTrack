@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Play, Pause, RotateCcw, Timer } from 'lucide-react'
+import { Play, Pause, ArrowCounterClockwise, Timer, Minus } from '@phosphor-icons/react'
 
 function Stopwatch() {
   const [elapsed, setElapsed] = useState(0)       // ms
@@ -39,7 +39,7 @@ function Stopwatch() {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(c).padStart(2, '0')}`
   }
 
-  const accentColor = '#FF6B35'
+  const accentColor = '#D4FF3F'
 
   if (collapsed) {
     return (
@@ -90,19 +90,23 @@ function Stopwatch() {
       zIndex: 900,
       animation: 'fadeInUp 0.3s ease-out',
     }}>
-      <div style={{
-        background: 'var(--surface)',
-        borderRadius: '20px',
-        padding: '16px 20px',
-        boxShadow: '0 16px 48px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.2)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(20px)',
-        minWidth: '180px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
+      <div
+        className="glow-card glow-accent"
+        style={{
+          background: 'var(--gradient-surface)',
+          borderRadius: 'var(--r-lg)',
+          padding: '16px 18px',
+          boxShadow: 'var(--shadow-xl)',
+          backdropFilter: 'blur(20px)',
+          // Le halo par defaut (280px) ecraserait un panneau de 190px.
+          '--card-halo-size': '170px',
+          minWidth: '190px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px',
+        }}
+      >
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -115,33 +119,25 @@ function Stopwatch() {
             alignItems: 'center',
             gap: '6px',
           }}>
-            <Timer size={14} color="var(--text-secondary)" />
+            <Timer size={14} color="var(--text-tertiary)" />
             <span style={{
               fontSize: '11px',
               fontWeight: '700',
-              color: 'var(--text-secondary)',
+              color: 'var(--text-tertiary)',
               textTransform: 'uppercase',
               letterSpacing: '1px',
             }}>
               Chrono
             </span>
           </div>
+          {/* Icone Phosphor au lieu du caractere tiret cadratin */}
           <button
             onClick={() => setCollapsed(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              padding: '2px',
-              display: 'flex',
-              lineHeight: 1,
-              borderRadius: '6px',
-              fontSize: '16px',
-            }}
+            className="icon-btn icon-btn-ghost"
+            style={{ width: '26px', height: '26px' }}
             title="Réduire"
           >
-            —
+            <Minus weight="bold" size={14} />
           </button>
         </div>
 
@@ -152,7 +148,7 @@ function Stopwatch() {
               width: '7px',
               height: '7px',
               borderRadius: '50%',
-              background: '#FF6B35',
+              background: 'var(--accent)',
               flexShrink: 0,
               animation: 'pulse-dot 1.2s ease-in-out infinite',
             }} />
@@ -161,8 +157,13 @@ function Stopwatch() {
             fontFamily: '"SF Mono", "Fira Code", "Courier New", monospace',
             fontSize: elapsed >= 3600000 ? '22px' : '28px',
             fontWeight: '800',
-            color: 'var(--text-primary)',
+            // Le chiffre passe a l'accent quand ca tourne : meme logique
+            // que les autres valeurs cles de l'app.
+            color: running ? 'var(--accent)' : 'var(--text-primary)',
+            textShadow: running ? '0 0 20px rgba(212, 255, 63, 0.3)' : 'none',
+            fontVariantNumeric: 'tabular-nums',
             letterSpacing: '2px',
+            transition: 'color 0.25s ease',
           }}>
             {format(elapsed)}
           </div>
@@ -173,48 +174,33 @@ function Stopwatch() {
           {/* Reset */}
           <button
             onClick={reset}
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              border: 'none',
-              background: 'var(--surface-elevated)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseOver={e => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-            onMouseOut={e => { e.currentTarget.style.background = 'var(--surface-elevated)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+            className="icon-btn icon-btn-ghost"
+            style={{ width: '42px', height: '42px' }}
             title="Réinitialiser"
           >
-            <RotateCcw size={16} />
+            <ArrowCounterClockwise size={17} />
           </button>
 
           {/* Play / Pause */}
           <button
             onClick={togglePlay}
             style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '16px',
-              border: 'none',
-              background: running
-                ? 'var(--gradient-primary)'
-                : 'var(--gradient-primary)',
-              color: 'white',
+              width: '54px',
+              height: '54px',
+              borderRadius: '50%',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 8px 20px rgba(255,107,53,0.4)',
               transition: 'all 0.25s ease',
-              transform: 'scale(1)',
+              // Les deux branches du ternaire d'origine etaient identiques :
+              // le bouton ne signalait pas son etat. Arret = CTA lime plein
+              // (demarrer), en cours = pilule lime discrete (mettre en pause).
+              background: running ? 'var(--accent-ghost)' : 'var(--accent)',
+              border: running ? '1px solid var(--accent-line)' : '1px solid transparent',
+              color: running ? 'var(--accent)' : 'var(--ink)',
+              boxShadow: running ? 'none' : 'var(--glow-accent)',
             }}
-            onMouseOver={e => { e.currentTarget.style.transform = 'scale(1.08)' }}
-            onMouseOut={e => { e.currentTarget.style.transform = 'scale(1)' }}
             title={running ? 'Pause' : 'Démarrer'}
           >
             {running ? <Pause size={22} /> : <Play size={22} style={{ marginLeft: '2px' }} />}

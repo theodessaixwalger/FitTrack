@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Plus } from 'lucide-react'
+import { X, Plus } from '@phosphor-icons/react'
 import { getDayName } from '../services/exerciceService'
 
 function AddDayModal({ isOpen, onClose, onAddDay, existingDays }) {
@@ -49,7 +49,7 @@ function AddDayModal({ isOpen, onClose, onAddDay, existingDays }) {
           <div className="modal-header">
             <h2>Ajouter un jour</h2>
             <button className="modal-close" onClick={onClose}>
-              <X size={24} />
+              <X weight="bold" size={24} />
             </button>
           </div>
           <div className="modal-body">
@@ -73,7 +73,7 @@ function AddDayModal({ isOpen, onClose, onAddDay, existingDays }) {
         <div className="modal-header">
           <h2>Ajouter un jour d'entraînement</h2>
           <button className="modal-close" onClick={onClose}>
-            <X size={24} />
+            <X weight="bold" size={24} />
           </button>
         </div>
 
@@ -140,7 +140,7 @@ function AddDayModal({ isOpen, onClose, onAddDay, existingDays }) {
                 </>
               ) : (
                 <>
-                  <Plus size={20} />
+                  <Plus weight="bold" size={20} />
                   Ajouter le jour
                 </>
               )}

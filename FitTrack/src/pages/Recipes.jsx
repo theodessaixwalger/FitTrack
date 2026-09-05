@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, ChefHat, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, ChefHat, CookingPot, Trash } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext'
 import { getRecipes, deleteRecipe, calculateRecipeNutrition, addRecipeToMeal } from '../services/recipeService'
 import { createMeal } from '../services/mealService'
@@ -92,11 +92,14 @@ function Recipes() {
                     padding: '80px', flexDirection: 'column', gap: '16px'
                 }}>
                     <div style={{
-                        width: '48px', height: '48px', border: '4px solid var(--border-light)',
-                        borderTopColor: 'var(--primary)', borderRadius: '50%',
+                        width: '44px', height: '44px', border: '3px solid rgba(255,255,255,0.08)',
+                        borderTopColor: 'var(--accent)', borderRadius: '50%',
                         animation: 'spin 0.8s linear infinite'
                     }} />
-                    <div style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Chargement...</div>
+                    <div style={{
+                        color: 'var(--text-tertiary)', fontWeight: '700', fontSize: '12px',
+                        letterSpacing: '1px', textTransform: 'uppercase'
+                    }}>Chargement...</div>
                 </div>
             </div>
         )
@@ -113,7 +116,7 @@ function Recipes() {
                         gap: '8px', fontSize: '16px', fontWeight: '600', marginBottom: '16px'
                     }}
                 >
-                    <ArrowLeft size={20} />
+                    <ArrowLeft weight="bold" size={20} />
                     Nutrition
                 </button>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -121,103 +124,87 @@ function Recipes() {
                         <h1>Mes Recettes</h1>
                         <p className="subtitle">{recipes.length} recette{recipes.length !== 1 ? 's' : ''} enregistrée{recipes.length !== 1 ? 's' : ''}</p>
                     </div>
-                    <button
-                        onClick={() => setShowCreate(true)}
-                        style={{
-                            background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                            border: 'none', borderRadius: '14px', color: 'white',
-                            padding: '12px 18px', cursor: 'pointer', fontWeight: '700',
-                            fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px',
-                            boxShadow: '0 4px 14px rgba(255,107,53,0.35)'
-                        }}
-                    >
-                        <Plus size={18} />
-                        Nouvelle
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            onClick={() => setShowCreate(true)}
+                            className="cta cta-primary cta-compact"
+                        >
+                            <Plus weight="bold" size={18} />
+                            Nouvelle
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <div className="page-content">
                 {recipes.length === 0 ? (
                     <div style={{
-                        textAlign: 'center', padding: '60px 20px',
-                        border: '2px dashed var(--border-light)', borderRadius: '20px'
+                        textAlign: 'center', padding: '56px 20px',
+                        border: '1px dashed var(--border-strong)', borderRadius: 'var(--r-lg)'
                     }}>
                         <div style={{
-                            width: '72px', height: '72px', borderRadius: '20px',
-                            background: 'linear-gradient(135deg, rgba(255,107,53,0.1), rgba(247,147,30,0.1))',
+                            width: '72px', height: '72px', borderRadius: '50%',
+                            background: 'var(--accent-ghost)',
+                            border: '1px solid var(--accent-line)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             margin: '0 auto 20px'
                         }}>
-                            <ChefHat size={36} style={{ color: 'var(--primary)' }} />
+                            <ChefHat size={34} style={{ color: 'var(--accent)' }} />
                         </div>
-                        <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px' }}>Aucune recette</h3>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
+                        <h3 style={{ fontSize: '17px', fontWeight: '800', marginBottom: '8px' }}>Aucune recette</h3>
+                        <p style={{ color: 'var(--text-tertiary)', fontSize: '13px', marginBottom: '24px' }}>
                             Créez vos premières recettes en combinant vos aliments favoris
                         </p>
                         <button
                             onClick={() => setShowCreate(true)}
-                            style={{
-                                background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                                border: 'none', borderRadius: '14px', color: 'white',
-                                padding: '14px 28px', cursor: 'pointer', fontWeight: '700', fontSize: '15px'
-                            }}
+                            className="cta cta-primary cta-compact"
+                            style={{ margin: '0 auto', padding: '13px 26px', fontSize: '14px' }}
                         >
                             Créer ma première recette
                         </button>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         {recipes.map(recipe => {
                             const nutrition = calculateRecipeNutrition(recipe, 1)
                             return (
                                 <div
                                     key={recipe.id}
                                     onClick={() => handleOpenDetail(recipe)}
-                                    style={{
-                                        background: 'var(--surface)', borderRadius: '16px',
-                                        padding: '16px 20px', cursor: 'pointer',
-                                        border: '2px solid var(--border-light)', transition: 'all 0.2s',
-                                        opacity: deletingId === recipe.id ? 0.5 : 1
-                                    }}
-                                    onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                                    onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.transform = 'translateY(0)' }}
+                                    className="recipe-card"
+                                    style={{ opacity: deletingId === recipe.id ? 0.5 : 1 }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                                                <ChefHat size={16} style={{ color: 'var(--primary)' }} />
-                                                <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>{recipe.name}</h3>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                                <CookingPot size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                                                <h3 className="recipe-name">{recipe.name}</h3>
                                             </div>
                                             {recipe.description && (
-                                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: '1.4' }}>
+                                                <p className="recipe-desc">
                                                     {recipe.description}
                                                 </p>
                                             )}
-                                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                                <span style={{
-                                                    fontSize: '12px', fontWeight: '700', padding: '4px 10px',
-                                                    background: 'rgba(255,107,53,0.1)', color: 'var(--primary)',
-                                                    borderRadius: '20px'
-                                                }}>
+                                            <div className="macro-badges" style={{ marginTop: 0 }}>
+                                                <span className="macro-badge badge-kcal">
                                                     {Math.round(nutrition.calories)} kcal
                                                 </span>
-                                                <span style={{ fontSize: '12px', fontWeight: '600', padding: '4px 10px', background: '#f0f0f0', borderRadius: '20px', color: 'var(--text-secondary)' }}>
-                                                    P: {Math.round(nutrition.proteins)}g
+                                                <span className="macro-badge badge-pro">
+                                                    P {Math.round(nutrition.proteins)}g
                                                 </span>
-                                                <span style={{ fontSize: '12px', fontWeight: '600', padding: '4px 10px', background: '#f0f0f0', borderRadius: '20px', color: 'var(--text-secondary)' }}>
-                                                    G: {Math.round(nutrition.carbs)}g
+                                                <span className="macro-badge badge-car">
+                                                    G {Math.round(nutrition.carbs)}g
                                                 </span>
-                                                <span style={{ fontSize: '12px', fontWeight: '600', padding: '4px 10px', background: '#f0f0f0', borderRadius: '20px', color: 'var(--text-secondary)' }}>
-                                                    L: {Math.round(nutrition.fats)}g
+                                                <span className="macro-badge badge-fat">
+                                                    L {Math.round(nutrition.fats)}g
                                                 </span>
                                             </div>
                                         </div>
-                                        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                                        <div className="recipe-meta">
+                                            <div>
                                                 {recipe.recipe_ingredients?.length || 0} ingr.
                                             </div>
-                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                            <div style={{ marginTop: '4px' }}>
                                                 {recipe.servings} portion{recipe.servings > 1 ? 's' : ''}
                                             </div>
                                         </div>

@@ -1,0 +1,4 @@
+# Agent skills / config
+.claude/
+.agents/
+skills-lock.json

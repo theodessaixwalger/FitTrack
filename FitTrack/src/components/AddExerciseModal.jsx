@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react'
-import { X, Plus, Search } from 'lucide-react'
+import {
+  X, Plus, MagnifyingGlass,
+  Barbell, PersonArmsSpread, PersonSimpleRun, BoxingGlove,
+  Fire, Heartbeat, PersonSimple, Sneaker, HandFist
+} from '@phosphor-icons/react'
 import { getAllExercises, getMuscleGroupIcon, createExercise } from '../services/exerciceService'
+
+// getMuscleGroupIcon renvoie un nom ; on le resout ici en composant.
+const MUSCLE_ICONS = {
+  Barbell, PersonArmsSpread, PersonSimpleRun, BoxingGlove,
+  Fire, Heartbeat, PersonSimple, Sneaker, HandFist
+}
+
+function MuscleIcon({ group, size = 14 }) {
+  const Cmp = MUSCLE_ICONS[getMuscleGroupIcon(group)] || Barbell
+  return <Cmp size={size} style={{ verticalAlign: '-2px', flexShrink: 0 }} />
+}
 
 function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
   const [exercises, setExercises] = useState([])
@@ -208,7 +223,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
         <div className="modal-header">
           <h2>Ajouter un exercice</h2>
           <button className="modal-close" onClick={onClose}>
-            <X size={24} />
+            <X weight="bold" size={24} />
           </button>
         </div>
 
@@ -245,7 +260,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                       cursor: 'pointer'
                     }}
                   >
-                    <X size={20} />
+                    <X weight="bold" size={20} />
                   </button>
                 </div>
 
@@ -271,9 +286,10 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                       className="input"
                       required
                     >
+                      {/* <option> n'accepte que du texte : pas d'icone ici */}
                       {muscleGroups.filter(g => g !== 'all').map((group) => (
                         <option key={group} value={group}>
-                          {getMuscleGroupIcon(group)} {group}
+                          {group}
                         </option>
                       ))}
                     </select>
@@ -315,7 +331,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                       </>
                     ) : (
                       <>
-                        <Plus size={20} />
+                        <Plus weight="bold" size={20} />
                         Créer et utiliser cet exercice
                       </>
                     )}
@@ -328,7 +344,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                 {/* Recherche */}
                 <div className="form-group">
                   <div className="search-input">
-                    <Search size={20} />
+                    <MagnifyingGlass size={20} />
                     <input
                       type="text"
                       value={searchTerm}
@@ -368,7 +384,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                           transition: 'all 0.2s ease'
                         }}
                       >
-                        {group === 'all' ? 'Tous' : `${getMuscleGroupIcon(group)} ${group}`}
+                        {group === 'all' ? 'Tous' : <><MuscleIcon group={group} /> {group}</>}
                       </button>
                     ))}
                   </div>
@@ -403,7 +419,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                     e.currentTarget.style.background = 'transparent'
                   }}
                 >
-                  <Plus size={20} />
+                  <Plus weight="bold" size={20} />
                   Créer un nouvel exercice
                 </button>
 
@@ -465,7 +481,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                                 display: 'flex',
                                 gap: '12px'
                               }}>
-                                <span>{getMuscleGroupIcon(exercise.muscle_group)} {exercise.muscle_group}</span>
+                                <span><MuscleIcon group={exercise.muscle_group} /> {exercise.muscle_group}</span>
                                 {exercise.equipment && <span>• {exercise.equipment}</span>}
                               </div>
                             </div>
@@ -509,7 +525,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                           fontSize: '14px',
                           color: 'var(--text-secondary)'
                         }}>
-                          {getMuscleGroupIcon(selectedExercise.muscle_group)} {selectedExercise.muscle_group}
+                          <MuscleIcon group={selectedExercise.muscle_group} /> {selectedExercise.muscle_group}
                           {selectedExercise.equipment && ` • ${selectedExercise.equipment}`}
                         </div>
                         {selectedExercise.description && (
@@ -535,7 +551,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                           cursor: 'pointer'
                         }}
                       >
-                        <X size={20} />
+                        <X weight="bold" size={20} />
                       </button>
                     </div>
                   </div>
@@ -607,7 +623,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                               opacity: sets.length === 1 ? 0.5 : 1
                             }}
                           >
-                            <X size={20} />
+                            <X weight="bold" size={20} />
                           </button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -669,7 +685,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                               opacity: cardioSets.length === 1 ? 0.5 : 1
                             }}
                           >
-                            <X size={20} />
+                            <X weight="bold" size={20} />
                           </button>
                         </div>
                         <div>
@@ -714,7 +730,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                         fontWeight: '600', marginTop: '8px'
                       }}
                     >
-                      <Plus size={20} />
+                      <Plus weight="bold" size={20} />
                       {exerciseMode === 'cardio' ? 'Ajouter un intervalle' : 'Ajouter une série'}
                     </button>
                   </div>
@@ -764,7 +780,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                         </>
                       ) : (
                         <>
-                          <Plus size={20} />
+                          <Plus weight="bold" size={20} />
                           Ajouter l'exercice
                         </>
                       )}

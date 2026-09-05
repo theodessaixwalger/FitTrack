@@ -1,4 +1,4 @@
-import { ArrowLeft, Shield, Lock, Eye, Trash2, Download, AlertCircle } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Lock, Eye, Trash, DownloadSimple, WarningCircle } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase'
@@ -117,7 +117,7 @@ function Privacy() {
             marginBottom: '16px'
           }}
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft weight="bold" size={20} />
           Retour
         </button>
         <h1>Confidentialité & Sécurité</h1>
@@ -128,7 +128,7 @@ function Privacy() {
         {/* Informations sur les données */}
         <div className="section">
           <h2 className="section-title">
-            <Shield size={20} style={{ marginRight: '8px' }} />
+            <ShieldCheck size={20} className="section-icon" style={{ marginRight: '8px' }} />
             Vos Données
           </h2>
           
@@ -190,7 +190,7 @@ function Privacy() {
         {/* Sécurité */}
         <div className="section">
           <h2 className="section-title">
-            <Lock size={20} style={{ marginRight: '8px' }} />
+            <Lock size={20} className="section-icon" style={{ marginRight: '8px' }} />
             Sécurité
           </h2>
           
@@ -203,7 +203,7 @@ function Privacy() {
             gap: '16px'
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-              <Shield size={24} style={{ color: 'var(--primary)', marginTop: '2px', flexShrink: 0 }} />
+              <ShieldCheck size={24} style={{ color: 'var(--primary)', marginTop: '2px', flexShrink: 0 }} />
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>
                   Chiffrement des données
@@ -263,7 +263,7 @@ function Privacy() {
               e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
-            <Download size={24} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+            <DownloadSimple size={24} style={{ color: 'var(--primary)', flexShrink: 0 }} />
             <div style={{ flex: 1, textAlign: 'left' }}>
               <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px' }}>
                 Exporter mes données
@@ -298,7 +298,7 @@ function Privacy() {
               e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
-            <Trash2 size={24} style={{ color: '#EF4444', flexShrink: 0 }} />
+            <Trash size={24} style={{ color: '#EF4444', flexShrink: 0 }} />
             <div style={{ flex: 1, textAlign: 'left' }}>
               <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '4px', color: '#EF4444' }}>
                 Supprimer mon compte
@@ -343,7 +343,7 @@ function Privacy() {
               justifyContent: 'center',
               margin: '0 auto 16px'
             }}>
-              <AlertCircle size={24} style={{ color: '#EF4444' }} />
+              <WarningCircle size={24} style={{ color: '#EF4444' }} />
             </div>
             
             <h3 style={{

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Plus } from 'lucide-react'
+import { X, Plus } from '@phosphor-icons/react'
 
 function EditExerciseModal({ isOpen, onClose, exercise, onSave }) {
   const [sets, setSets] = useState([])
@@ -69,7 +69,7 @@ function EditExerciseModal({ isOpen, onClose, exercise, onSave }) {
         <div className="modal-header">
           <h2>Modifier - {exercise.exercise_name}</h2>
           <button onClick={onClose} className="modal-close">
-            <X size={24} />
+            <X weight="bold" size={24} />
           </button>
         </div>
 
@@ -120,7 +120,7 @@ function EditExerciseModal({ isOpen, onClose, exercise, onSave }) {
                       }}
                       title="Supprimer cette série"
                     >
-                      <X size={20} />
+                      <X weight="bold" size={20} />
                     </button>
                   </div>
 
@@ -232,7 +232,7 @@ function EditExerciseModal({ isOpen, onClose, exercise, onSave }) {
                   marginTop: '8px'
                 }}
               >
-                <Plus size={20} />
+                <Plus weight="bold" size={20} />
                 Ajouter une série
               </button>
             </div>
