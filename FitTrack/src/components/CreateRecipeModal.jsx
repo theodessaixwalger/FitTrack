@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Plus, MagnifyingGlass, Trash, ChefHat, PencilSimple } from '@phosphor-icons/react'
+import { X, Plus, Minus, MagnifyingGlass, Trash, ChefHat, PencilSimple, ArrowLeft, ArrowRight, Check } from '@phosphor-icons/react'
 import { searchFoods } from '../services/foodService'
 import { createRecipe, updateRecipe, clearRecipeIngredients, addIngredientToRecipe, calculateRecipeNutrition } from '../services/recipeService'
 import { useAuth } from '../context/AuthContext'
@@ -115,156 +115,105 @@ function CreateRecipeModal({ isOpen, onClose, onCreated, recipe = null }) {
     const nutrition = previewNutrition()
 
     return createPortal(
-        <div style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(0,0,0,0.55)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-            backdropFilter: 'blur(4px)'
-        }}>
-            <div style={{
-                background: 'white', borderRadius: '24px 24px 0 0',
-                width: '100%', maxWidth: '480px',
-                maxHeight: '92vh', display: 'flex', flexDirection: 'column',
-                overflow: 'hidden'
-            }}>
+        <div className="sheet-overlay">
+            <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="recipe-form-title">
                 {/* Header */}
-                <div style={{
-                    padding: '20px 20px 16px',
-                    borderBottom: '1px solid var(--border-light)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    flexShrink: 0
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                            width: '40px', height: '40px', borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            <ChefHat size={20} style={{ color: 'white' }} />
+                <div className="sheet-header" style={{ alignItems: 'center' }}>
+                    <div className="sheet-title-group">
+                        <div className="sheet-icon">
+                            {isEditMode ? <PencilSimple size={20} /> : <ChefHat size={22} />}
                         </div>
-                        <div>
-                            <h2 style={{ fontSize: '18px', fontWeight: '800', margin: 0 }}>{isEditMode ? 'Modifier la recette' : 'Nouvelle recette'}</h2>
-                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
-                                Étape {step} / 2
+                        <div style={{ minWidth: 0 }}>
+                            <h2 id="recipe-form-title" className="sheet-title">{isEditMode ? 'Modifier la recette' : 'Nouvelle recette'}</h2>
+                            <p className="sheet-subtitle">
+                                Étape {step} / 2 · {step === 1 ? 'Informations' : 'Ingrédients'}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} style={{
-                        background: 'var(--bg-secondary)', border: 'none', borderRadius: '50%',
-                        width: '36px', height: '36px', display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', cursor: 'pointer'
-                    }}>
-                        <X weight="bold" size={18} />
+                    <button onClick={onClose} className="icon-btn icon-btn-ghost" aria-label="Fermer">
+                        <X weight="bold" size={16} />
                     </button>
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                <div className="sheet-body" style={{ gap: '16px' }}>
                     {step === 1 ? (
                         /* Étape 1 : Informations */
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                                    Nom de la recette *
-                                </label>
+                        <>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label htmlFor="recipe-name">Nom de la recette *</label>
                                 <input
+                                    id="recipe-name"
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Ex: Poulet grillé aux légumes"
-                                    style={{
-                                        width: '100%', padding: '14px', fontSize: '15px',
-                                        border: '2px solid var(--border-light)', borderRadius: '12px',
-                                        outline: 'none', fontFamily: 'inherit',
-                                        boxSizing: 'border-box'
-                                    }}
                                     autoFocus
                                 />
                             </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                                    Description (optionnel)
-                                </label>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label htmlFor="recipe-description">Description (optionnel)</label>
                                 <textarea
+                                    id="recipe-description"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Notes, instructions..."
                                     rows={3}
-                                    style={{
-                                        width: '100%', padding: '14px', fontSize: '15px',
-                                        border: '2px solid var(--border-light)', borderRadius: '12px',
-                                        outline: 'none', fontFamily: 'inherit', resize: 'none',
-                                        boxSizing: 'border-box'
-                                    }}
+                                    style={{ resize: 'none' }}
                                 />
                             </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                                    Nombre de portions
-                                </label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <button onClick={() => setServings(Math.max(1, servings - 1))} style={{
-                                        width: '40px', height: '40px', borderRadius: '50%',
-                                        border: '2px solid var(--border-light)', background: 'white',
-                                        fontSize: '20px', cursor: 'pointer', display: 'flex',
-                                        alignItems: 'center', justifyContent: 'center'
-                                    }}>−</button>
-                                    <span style={{ fontSize: '24px', fontWeight: '800', minWidth: '40px', textAlign: 'center' }}>{servings}</span>
-                                    <button onClick={() => setServings(servings + 1)} style={{
-                                        width: '40px', height: '40px', borderRadius: '50%',
-                                        border: '2px solid var(--primary)', background: 'var(--primary)',
-                                        fontSize: '20px', color: 'white', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}>+</button>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label>Nombre de portions</label>
+                                <div className="stepper stepper-lg">
+                                    <button
+                                        onClick={() => setServings(Math.max(1, servings - 1))}
+                                        disabled={servings <= 1}
+                                        className="stepper-btn"
+                                        aria-label="Retirer une portion"
+                                    >
+                                        <Minus weight="bold" size={16} />
+                                    </button>
+                                    <span className="stepper-value">{servings}</span>
+                                    <button
+                                        onClick={() => setServings(servings + 1)}
+                                        className="stepper-btn is-accent"
+                                        aria-label="Ajouter une portion"
+                                    >
+                                        <Plus weight="bold" size={16} />
+                                    </button>
                                 </div>
                             </div>
-                        </div>
+                        </>
                     ) : (
                         /* Étape 2 : Ingrédients */
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <>
                             {/* Recherche */}
                             <div style={{ position: 'relative' }}>
-                                <MagnifyingGlass size={16} style={{
+                                <MagnifyingGlass size={18} style={{
                                     position: 'absolute', left: '14px', top: '50%',
-                                    transform: 'translateY(-50%)', color: 'var(--text-secondary)'
+                                    transform: 'translateY(-50%)', color: 'var(--text-tertiary)'
                                 }} />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Rechercher un aliment..."
-                                    style={{
-                                        width: '100%', padding: '12px 12px 12px 42px',
-                                        border: '2px solid var(--border-light)', borderRadius: '12px',
-                                        fontSize: '14px', outline: 'none', fontFamily: 'inherit',
-                                        boxSizing: 'border-box'
-                                    }}
+                                    className="search-field"
+                                    style={{ padding: '12px 14px 12px 44px' }}
                                 />
                             </div>
 
                             {/* Résultats de recherche */}
                             {searchResults.length > 0 && (
-                                <div style={{
-                                    border: '2px solid var(--border-light)', borderRadius: '12px',
-                                    overflow: 'hidden', maxHeight: '200px', overflowY: 'auto'
-                                }}>
+                                <div className="food-results">
                                     {searchResults.map(food => (
-                                        <button key={food.id} onClick={() => handleAddIngredient(food)} style={{
-                                            width: '100%', padding: '12px 16px', background: 'white',
-                                            border: 'none', borderBottom: '1px solid var(--border-light)',
-                                            textAlign: 'left', cursor: 'pointer', display: 'flex',
-                                            justifyContent: 'space-between', alignItems: 'center',
-                                            transition: 'background 0.15s'
-                                        }}
-                                            onMouseOver={e => e.currentTarget.style.background = '#f8f8f8'}
-                                            onMouseOut={e => e.currentTarget.style.background = 'white'}
-                                        >
-                                            <div>
-                                                <div style={{ fontWeight: '700', fontSize: '14px' }}>{food.name}</div>
-                                                {food.brand && <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{food.brand}</div>}
+                                        <button key={food.id} onClick={() => handleAddIngredient(food)} className="food-result">
+                                            <div style={{ minWidth: 0 }}>
+                                                <div className="ingredient-name">{food.name}</div>
+                                                {food.brand && <div className="ingredient-sub">{food.brand}</div>}
                                             </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                                            <div className="food-result-side">
                                                 <span>{food.calories} kcal/{food.serving_size}{food.serving_unit}</span>
-                                                <Plus weight="bold" size={16} style={{ color: 'var(--primary)' }} />
+                                                <Plus weight="bold" size={16} />
                                             </div>
                                         </button>
                                     ))}
@@ -272,123 +221,108 @@ function CreateRecipeModal({ isOpen, onClose, onCreated, recipe = null }) {
                             )}
 
                             {searching && (
-                                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>Recherche...</div>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center', color: 'var(--text-tertiary)', fontSize: '13px', fontWeight: '600' }}>
+                                    <div className="spinner" style={{ width: '16px', height: '16px' }} />
+                                    Recherche...
+                                </div>
                             )}
 
                             {/* Liste des ingrédients ajoutés */}
                             {ingredients.length > 0 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    <h4 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', margin: 0 }}>
-                                        Ingrédients ({ingredients.length})
+                                <div>
+                                    <h4 className="sheet-section-title">
+                                        Ingrédients
+                                        <span className="chip-more">{ingredients.length}</span>
                                     </h4>
-                                    {ingredients.map(({ food, quantity }) => (
-                                        <div key={food.id} style={{
-                                            display: 'flex', alignItems: 'center', gap: '12px',
-                                            padding: '12px', background: '#f8f8f8', borderRadius: '12px'
-                                        }}>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: '700', fontSize: '14px' }}>{food.name}</div>
-                                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                                    {Math.round(food.calories * (parseFloat(quantity) || 0) / food.serving_size)} kcal
+                                    <div className="ingredient-list">
+                                        {ingredients.map(({ food, quantity }) => (
+                                            <div key={food.id} className="ingredient-row">
+                                                <div className="ingredient-info">
+                                                    <div className="ingredient-name">{food.name}</div>
+                                                    <div className="ingredient-kcal">
+                                                        {Math.round(food.calories * (parseFloat(quantity) || 0) / food.serving_size)}
+                                                        <span>kcal</span>
+                                                    </div>
+                                                </div>
+                                                <div className="ingredient-edit">
+                                                    <input
+                                                        type="number"
+                                                        value={quantity}
+                                                        min="1"
+                                                        onChange={(e) => handleQuantityChange(food.id, e.target.value)}
+                                                        className="qty-input"
+                                                        aria-label={`Quantité de ${food.name}`}
+                                                    />
+                                                    <span className="qty-unit">{food.serving_unit}</span>
+                                                    <button
+                                                        onClick={() => handleRemoveIngredient(food.id)}
+                                                        className="btn-remove"
+                                                        aria-label={`Retirer ${food.name}`}
+                                                    >
+                                                        <Trash size={16} />
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <input
-                                                    type="number"
-                                                    value={quantity}
-                                                    min="1"
-                                                    onChange={(e) => handleQuantityChange(food.id, e.target.value)}
-                                                    style={{
-                                                        width: '70px', padding: '6px 8px', borderRadius: '8px',
-                                                        border: '2px solid var(--border-light)', fontSize: '14px',
-                                                        fontWeight: '700', textAlign: 'center', outline: 'none',
-                                                        fontFamily: 'inherit'
-                                                    }}
-                                                />
-                                                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', minWidth: '20px' }}>{food.serving_unit}</span>
-                                                <button onClick={() => handleRemoveIngredient(food.id)} style={{
-                                                    background: 'none', border: 'none', color: '#EF4444',
-                                                    cursor: 'pointer', padding: '4px', borderRadius: '6px',
-                                                    display: 'flex', alignItems: 'center'
-                                                }}>
-                                                    <Trash size={16} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
-                                    {/* Aperçu macros */}
-                                    <div style={{
-                                        padding: '16px', background: 'linear-gradient(135deg, rgba(255,107,53,0.08), rgba(247,147,30,0.08))',
-                                        borderRadius: '12px', border: '2px solid rgba(255,107,53,0.15)'
-                                    }}>
-                                        <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary)', marginBottom: '10px' }}>
-                                            APERÇU MACROS (1 PORTION)
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center' }}>
-                                            {[
-                                                { label: 'Calories', value: Math.round(nutrition.calories), unit: 'kcal' },
-                                                { label: 'Protéines', value: Math.round(nutrition.proteins), unit: 'g' },
-                                                { label: 'Glucides', value: Math.round(nutrition.carbs), unit: 'g' },
-                                                { label: 'Lipides', value: Math.round(nutrition.fats), unit: 'g' },
-                                            ].map(m => (
-                                                <div key={m.label}>
-                                                    <div style={{ fontSize: '16px', fontWeight: '800' }}>{m.value}<span style={{ fontSize: '11px', fontWeight: '600' }}>{m.unit}</span></div>
-                                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>{m.label}</div>
-                                                </div>
-                                            ))}
-                                        </div>
+                            {/* Aperçu macros */}
+                            {ingredients.length > 0 && (
+                                <div className="recipe-macros">
+                                    <div className="tile-label" style={{ marginBottom: '10px' }}>Aperçu · 1 portion</div>
+                                    <div className="recipe-kcal">
+                                        {Math.round(nutrition.calories)}
+                                        <span>kcal</span>
+                                    </div>
+                                    <div className="recipe-macro-grid">
+                                        {[
+                                            { key: 'pro', label: 'Protéines', value: nutrition.proteins },
+                                            { key: 'car', label: 'Glucides', value: nutrition.carbs },
+                                            { key: 'fat', label: 'Lipides', value: nutrition.fats },
+                                        ].map(m => (
+                                            <div key={m.key} className={`recipe-macro is-${m.key}`}>
+                                                <div className="recipe-macro-value">{Math.round(m.value)}g</div>
+                                                <div className="recipe-macro-label">{m.label}</div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             )}
 
                             {ingredients.length === 0 && !searchQuery && (
-                                <div style={{
-                                    textAlign: 'center', padding: '32px',
-                                    color: 'var(--text-secondary)', fontSize: '14px',
-                                    fontWeight: '600', border: '2px dashed var(--border-light)',
-                                    borderRadius: '12px'
-                                }}>
+                                <div className="sheet-empty">
                                     Recherchez et ajoutez des aliments
                                 </div>
                             )}
-                        </div>
+                        </>
                     )}
                 </div>
 
                 {/* Footer */}
-                <div style={{
-                    padding: '16px 20px', borderTop: '1px solid var(--border-light)',
-                    flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px'
-                }}>
-                    {error && (
-                        <div style={{
-                            padding: '10px 14px', background: '#fee', borderRadius: '10px',
-                            fontSize: '13px', color: '#EF4444', fontWeight: '600'
-                        }}>{error}</div>
-                    )}
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="sheet-footer">
+                    {error && <div className="form-error">{error}</div>}
+                    <div className="sheet-footer-row">
                         {step === 2 && (
-                            <button onClick={() => setStep(1)} style={{
-                                flex: 1, padding: '14px', background: 'white',
-                                border: '2px solid var(--border-light)', borderRadius: '12px',
-                                fontSize: '15px', fontWeight: '700', cursor: 'pointer'
-                            }}>
-                                ← Retour
+                            <button onClick={() => setStep(1)} className="btn btn-secondary" style={{ flex: 1 }}>
+                                <ArrowLeft weight="bold" size={16} />
+                                Retour
                             </button>
                         )}
                         <button
                             onClick={step === 1 ? () => { if (!name.trim()) { setError('Donnez un nom à votre recette'); return }; setError(''); setStep(2) } : handleSave}
                             disabled={saving}
-                            style={{
-                                flex: 2, padding: '14px',
-                                background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                                border: 'none', borderRadius: '12px', color: 'white',
-                                fontSize: '15px', fontWeight: '800', cursor: saving ? 'not-allowed' : 'pointer',
-                                opacity: saving ? 0.7 : 1
-                            }}
+                            className="btn btn-primary"
+                            style={{ flex: 2 }}
                         >
-                            {step === 1 ? 'Suivant → Ingrédients' : saving ? 'Enregistrement...' : isEditMode ? '✓ Enregistrer les modifications' : '✓ Créer la recette'}
+                            {step === 1 ? (
+                                <>Suivant : ingrédients <ArrowRight weight="bold" size={16} /></>
+                            ) : saving ? (
+                                <><div className="loading-spinner" /> Enregistrement...</>
+                            ) : (
+                                <><Check weight="bold" size={16} /> {isEditMode ? 'Enregistrer' : 'Créer la recette'}</>
+                            )}
                         </button>
                     </div>
                 </div>

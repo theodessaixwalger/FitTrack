@@ -1,166 +1,132 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Trash, ChefHat, PencilSimple } from '@phosphor-icons/react'
+import { X, Trash, CookingPot, PencilSimple, Minus, Plus, SunHorizon, Sun, MoonStars, Cookie } from '@phosphor-icons/react'
 import { calculateRecipeNutrition } from '../services/recipeService'
 
 function RecipeDetailModal({ recipe, isOpen, onClose, onDelete, onAddToMeal, onEdit }) {
     const [servings, setServings] = useState(1)
-    const [adding, setAdding] = useState(false)
+    const [adding, setAdding] = useState(null) // type de repas en cours d'ajout
 
     if (!isOpen || !recipe) return null
 
     const nutrition = calculateRecipeNutrition(recipe, servings)
+    const ingredients = recipe.recipe_ingredients || []
 
     const handleAddToMeal = async (mealType) => {
-        setAdding(true)
+        setAdding(mealType)
         try {
             await onAddToMeal(recipe, servings, mealType)
             onClose()
         } catch (err) {
             console.error('Erreur ajout recette:', err)
         } finally {
-            setAdding(false)
+            setAdding(null)
         }
     }
 
+    // Memes icones que les sections de la page Nutrition
     const mealTypes = [
-        { type: 'breakfast', label: '🌅 Petit-déjeuner' },
-        { type: 'lunch', label: '☀️ Déjeuner' },
-        { type: 'dinner', label: '🌙 Dîner' },
-        { type: 'snack', label: '🍎 Collation' },
+        { type: 'breakfast', label: 'Petit-déjeuner', icon: <SunHorizon size={18} /> },
+        { type: 'lunch', label: 'Déjeuner', icon: <Sun size={18} /> },
+        { type: 'dinner', label: 'Dîner', icon: <MoonStars size={18} /> },
+        { type: 'snack', label: 'Collation', icon: <Cookie size={18} /> },
     ]
 
     return createPortal(
-        <div style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(0,0,0,0.55)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-            backdropFilter: 'blur(4px)'
-        }}>
-            <div style={{
-                background: 'white', borderRadius: '24px 24px 0 0',
-                width: '100%', maxWidth: '480px',
-                maxHeight: '92vh', display: 'flex', flexDirection: 'column',
-                overflow: 'hidden'
-            }}>
+        <div className="sheet-overlay">
+            <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="recipe-detail-title">
                 {/* Header */}
-                <div style={{
-                    padding: '20px 20px 16px',
-                    borderBottom: '1px solid var(--border-light)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                    flexShrink: 0
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                        <div style={{
-                            width: '44px', height: '44px', borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0
-                        }}>
-                            <ChefHat size={22} style={{ color: 'white' }} />
+                <div className="sheet-header">
+                    <div className="sheet-title-group">
+                        <div className="sheet-icon">
+                            <CookingPot size={22} />
                         </div>
-                        <div>
-                            <h2 style={{ fontSize: '18px', fontWeight: '800', margin: 0 }}>{recipe.name}</h2>
+                        <div style={{ minWidth: 0 }}>
+                            <h2 id="recipe-detail-title" className="sheet-title">{recipe.name}</h2>
                             {recipe.description && (
-                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>{recipe.description}</p>
+                                <p className="sheet-subtitle">{recipe.description}</p>
                             )}
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
-                        <button onClick={() => onEdit(recipe)} style={{
-                            background: 'rgba(255,107,53,0.1)', border: 'none', borderRadius: '10px',
-                            width: '36px', height: '36px', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)'
-                        }}>
+                    <div className="sheet-actions">
+                        <button onClick={() => onEdit(recipe)} className="icon-btn icon-btn-ghost is-accent" aria-label="Modifier la recette">
                             <PencilSimple size={16} />
                         </button>
-                        <button onClick={() => onDelete(recipe.id)} style={{
-                            background: '#fee', border: 'none', borderRadius: '10px',
-                            width: '36px', height: '36px', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', cursor: 'pointer', color: '#EF4444'
-                        }}>
+                        <button onClick={() => onDelete(recipe.id)} className="icon-btn icon-btn-ghost is-danger" aria-label="Supprimer la recette">
                             <Trash size={16} />
                         </button>
-                        <button onClick={onClose} style={{
-                            background: 'var(--bg-secondary)', border: 'none', borderRadius: '50%',
-                            width: '36px', height: '36px', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', cursor: 'pointer'
-                        }}>
-                            <X weight="bold" size={18} />
+                        <button onClick={onClose} className="icon-btn icon-btn-ghost" aria-label="Fermer">
+                            <X weight="bold" size={16} />
                         </button>
                     </div>
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div className="sheet-body">
                     {/* Macros pour N portions */}
-                    <div style={{ padding: '20px 20px 0' }}>
-                        <div style={{
-                            padding: '16px',
-                            background: 'linear-gradient(135deg, rgba(255,107,53,0.08), rgba(247,147,30,0.08))',
-                            borderRadius: '16px', border: '2px solid rgba(255,107,53,0.15)'
-                        }}>
-                            {/* Sélecteur de portions */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                                    MACROS POUR
-                                </span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <button onClick={() => setServings(Math.max(1, servings - 1))} style={{
-                                        width: '28px', height: '28px', borderRadius: '50%',
-                                        border: '2px solid var(--border-light)', background: 'white',
-                                        cursor: 'pointer', fontSize: '16px', display: 'flex',
-                                        alignItems: 'center', justifyContent: 'center'
-                                    }}>−</button>
-                                    <span style={{ fontWeight: '800', fontSize: '16px', minWidth: '60px', textAlign: 'center' }}>
-                                        {servings} portion{servings > 1 ? 's' : ''}
-                                    </span>
-                                    <button onClick={() => setServings(servings + 1)} style={{
-                                        width: '28px', height: '28px', borderRadius: '50%',
-                                        border: '2px solid var(--primary)', background: 'var(--primary)',
-                                        color: 'white', cursor: 'pointer', fontSize: '16px',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}>+</button>
+                    <div className="recipe-macros">
+                        <div className="recipe-macros-head">
+                            <span className="tile-label">Portions</span>
+                            <div className="stepper">
+                                <button
+                                    onClick={() => setServings(Math.max(1, servings - 1))}
+                                    disabled={servings <= 1}
+                                    className="stepper-btn"
+                                    aria-label="Retirer une portion"
+                                >
+                                    <Minus weight="bold" size={14} />
+                                </button>
+                                <span className="stepper-value">{servings}</span>
+                                <button
+                                    onClick={() => setServings(servings + 1)}
+                                    className="stepper-btn is-accent"
+                                    aria-label="Ajouter une portion"
+                                >
+                                    <Plus weight="bold" size={14} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="recipe-kcal">
+                            {Math.round(nutrition.calories)}
+                            <span>kcal</span>
+                        </div>
+
+                        <div className="recipe-macro-grid">
+                            {[
+                                { key: 'pro', label: 'Protéines', value: nutrition.proteins },
+                                { key: 'car', label: 'Glucides', value: nutrition.carbs },
+                                { key: 'fat', label: 'Lipides', value: nutrition.fats },
+                            ].map(m => (
+                                <div key={m.key} className={`recipe-macro is-${m.key}`}>
+                                    <div className="recipe-macro-value">{Math.round(m.value)}g</div>
+                                    <div className="recipe-macro-label">{m.label}</div>
                                 </div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center' }}>
-                                {[
-                                    { label: 'Calories', value: Math.round(nutrition.calories), unit: 'kcal' },
-                                    { label: 'Protéines', value: Math.round(nutrition.proteins), unit: 'g' },
-                                    { label: 'Glucides', value: Math.round(nutrition.carbs), unit: 'g' },
-                                    { label: 'Lipides', value: Math.round(nutrition.fats), unit: 'g' },
-                                ].map(m => (
-                                    <div key={m.label}>
-                                        <div style={{ fontSize: '18px', fontWeight: '800' }}>{m.value}<span style={{ fontSize: '11px' }}>{m.unit}</span></div>
-                                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>{m.label}</div>
-                                    </div>
-                                ))}
-                            </div>
+                            ))}
                         </div>
                     </div>
 
                     {/* Liste des ingrédients */}
-                    <div style={{ padding: '20px' }}>
-                        <h4 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                            INGRÉDIENTS ({recipe.recipe_ingredients?.length || 0})
+                    <div>
+                        <h4 className="sheet-section-title">
+                            Ingrédients
+                            <span className="chip-more">{ingredients.length}</span>
                         </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {recipe.recipe_ingredients?.map(ingredient => (
-                                <div key={ingredient.id} style={{
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    padding: '12px', background: '#f8f8f8', borderRadius: '12px'
-                                }}>
-                                    <div>
-                                        <div style={{ fontWeight: '700', fontSize: '14px' }}>{ingredient.foods.name}</div>
+                        <div className="ingredient-list">
+                            {ingredients.map(ingredient => (
+                                <div key={ingredient.id} className="ingredient-row">
+                                    <div className="ingredient-info">
+                                        <div className="ingredient-name">{ingredient.foods.name}</div>
                                         {ingredient.foods.brand && (
-                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{ingredient.foods.brand}</div>
+                                            <div className="ingredient-sub">{ingredient.foods.brand}</div>
                                         )}
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '14px', fontWeight: '700' }}>
+                                    <div className="ingredient-side">
+                                        <div className="ingredient-qty">
                                             {ingredient.quantity}{ingredient.foods.serving_unit}
                                         </div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                            {Math.round(ingredient.foods.calories * ingredient.quantity / ingredient.foods.serving_size)} kcal
+                                        <div className="ingredient-kcal">
+                                            {Math.round(ingredient.foods.calories * ingredient.quantity / ingredient.foods.serving_size)}
+                                            <span>kcal</span>
                                         </div>
                                     </div>
                                 </div>
@@ -169,22 +135,19 @@ function RecipeDetailModal({ recipe, isOpen, onClose, onDelete, onAddToMeal, onE
                     </div>
 
                     {/* Ajouter au repas */}
-                    <div style={{ padding: '0 20px 20px' }}>
-                        <h4 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                            AJOUTER AU REPAS
-                        </h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                            {mealTypes.map(({ type, label }) => (
-                                <button key={type} onClick={() => handleAddToMeal(type)} disabled={adding} style={{
-                                    padding: '14px', background: 'white',
-                                    border: '2px solid var(--border-light)', borderRadius: '12px',
-                                    fontSize: '14px', fontWeight: '700', cursor: adding ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s', textAlign: 'center',
-                                    opacity: adding ? 0.6 : 1
-                                }}
-                                    onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
-                                    onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'inherit' }}
+                    <div>
+                        <h4 className="sheet-section-title">Ajouter au repas</h4>
+                        <div className="meal-pick-grid">
+                            {mealTypes.map(({ type, label, icon }) => (
+                                <button
+                                    key={type}
+                                    onClick={() => handleAddToMeal(type)}
+                                    disabled={adding !== null}
+                                    className="meal-pick"
                                 >
+                                    {adding === type
+                                        ? <div className="spinner" style={{ width: '16px', height: '16px' }} />
+                                        : icon}
                                     {label}
                                 </button>
                             ))}
