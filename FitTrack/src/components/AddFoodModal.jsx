@@ -65,6 +65,14 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
     }
   }
 
+  // Normalise une saisie décimale : autorise la virgule (clavier FR) en plus du point
+  const sanitizeDecimal = (value) => {
+    let v = value.replace(',', '.').replace(/[^0-9.]/g, '')
+    const parts = v.split('.')
+    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('')
+    return v
+  }
+
   const handleSelectFood = (food) => {
     setSelectedFood(food)
     setQuantity(String(food.serving_size)) // quantité par défaut = portion
@@ -91,7 +99,14 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
 
   const handleCreateFood = async () => {
     try {
-      const createdFood = await addFood(newFood)
+      const createdFood = await addFood({
+        ...newFood,
+        serving_size: parseFloat(newFood.serving_size) || 0,
+        calories: parseFloat(newFood.calories) || 0,
+        proteins: parseFloat(newFood.proteins) || 0,
+        carbs: parseFloat(newFood.carbs) || 0,
+        fats: parseFloat(newFood.fats) || 0,
+      })
       onAddFood(createdFood)
       onClose()
     } catch (error) {
@@ -283,12 +298,10 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
 
                   <div style={{ flex: 1, position: 'relative' }}>
                     <input
-                      type="number"
-                      min="0.1"
-                      step="any"
+                      type="text"
                       inputMode="decimal"
                       value={quantity}
-                      onChange={e => setQuantity(e.target.value)}
+                      onChange={e => setQuantity(sanitizeDecimal(e.target.value))}
                       autoFocus
                       style={{
                         width: '100%', padding: '14px 48px 14px 16px',
@@ -687,9 +700,10 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                     Portion *
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={newFood.serving_size}
-                    onChange={(e) => setNewFood({ ...newFood, serving_size: parseFloat(e.target.value) })}
+                    onChange={(e) => setNewFood({ ...newFood, serving_size: sanitizeDecimal(e.target.value) })}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -731,9 +745,10 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                     Calories *
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={newFood.calories}
-                    onChange={(e) => setNewFood({ ...newFood, calories: parseFloat(e.target.value) })}
+                    onChange={(e) => setNewFood({ ...newFood, calories: sanitizeDecimal(e.target.value) })}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -750,10 +765,10 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                     Protéines (g) *
                   </label>
                   <input
-                    type="number"
-                    step="0.1"
+                    type="text"
+                    inputMode="decimal"
                     value={newFood.proteins}
-                    onChange={(e) => setNewFood({ ...newFood, proteins: parseFloat(e.target.value) })}
+                    onChange={(e) => setNewFood({ ...newFood, proteins: sanitizeDecimal(e.target.value) })}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -773,10 +788,10 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                     Glucides (g) *
                   </label>
                   <input
-                    type="number"
-                    step="0.1"
+                    type="text"
+                    inputMode="decimal"
                     value={newFood.carbs}
-                    onChange={(e) => setNewFood({ ...newFood, carbs: parseFloat(e.target.value) })}
+                    onChange={(e) => setNewFood({ ...newFood, carbs: sanitizeDecimal(e.target.value) })}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -793,10 +808,10 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                     Lipides (g) *
                   </label>
                   <input
-                    type="number"
-                    step="0.1"
+                    type="text"
+                    inputMode="decimal"
                     value={newFood.fats}
-                    onChange={(e) => setNewFood({ ...newFood, fats: parseFloat(e.target.value) })}
+                    onChange={(e) => setNewFood({ ...newFood, fats: sanitizeDecimal(e.target.value) })}
                     style={{
                       width: '100%',
                       padding: '14px 16px',
@@ -822,7 +837,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   onClick={handleCreateFood}
                   className="btn"
                   style={{ flex: 1 }}
-                  disabled={!newFood.name || !newFood.calories}
+                  disabled={!newFood.name || !parseFloat(newFood.calories)}
                 >
                   Créer
                 </button>
