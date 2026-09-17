@@ -4,28 +4,56 @@ import { X, Plus, MagnifyingGlass, CookingPot, ForkKnife } from '@phosphor-icons
 import { searchFoods, addFood } from '../services/foodService'
 import { getRecipes, calculateRecipeNutrition } from '../services/recipeService'
 
+// Le mobile décharge parfois la page quand on change d'app (mémoire faible) :
+// on garde le brouillon en sessionStorage pour le restaurer au retour.
+const DRAFT_KEY = 'fittrack_add_food_draft'
+
+const defaultNewFood = {
+  name: '',
+  brand: '',
+  category: 'other',
+  serving_size: 100,
+  serving_unit: 'g',
+  calories: 0,
+  proteins: 0,
+  carbs: 0,
+  fats: 0
+}
+
+const loadDraft = () => {
+  try {
+    const saved = sessionStorage.getItem(DRAFT_KEY)
+    return saved ? JSON.parse(saved) : null
+  } catch {
+    return null
+  }
+}
+
 function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
-  const [activeTab, setActiveTab] = useState('food') // 'food' | 'recipe'
+  const draft = loadDraft()
+  const [activeTab, setActiveTab] = useState(draft?.activeTab || 'food') // 'food' | 'recipe'
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [selectedFood, setSelectedFood] = useState(null)  // aliment sélectionné en attente de quantité
-  const [quantity, setQuantity] = useState('')
+  const [showAddForm, setShowAddForm] = useState(draft?.showAddForm || false)
+  const [selectedFood, setSelectedFood] = useState(draft?.selectedFood || null)  // aliment sélectionné en attente de quantité
+  const [quantity, setQuantity] = useState(draft?.quantity || '')
   const [recipes, setRecipes] = useState([])
   const [recipesLoading, setRecipesLoading] = useState(false)
   const [recipeSearch, setRecipeSearch] = useState('')
-  const [newFood, setNewFood] = useState({
-    name: '',
-    brand: '',
-    category: 'other',
-    serving_size: 100,
-    serving_unit: 'g',
-    calories: 0,
-    proteins: 0,
-    carbs: 0,
-    fats: 0
-  })
+  const [newFood, setNewFood] = useState(draft?.newFood || defaultNewFood)
+
+  // Sauvegarde continue du brouillon tant que la modal est ouverte
+  useEffect(() => {
+    if (!isOpen) return
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ activeTab, showAddForm, selectedFood, quantity, newFood }))
+    } catch {}
+  }, [isOpen, activeTab, showAddForm, selectedFood, quantity, newFood])
+
+  const clearDraft = () => {
+    try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
+  }
 
   useEffect(() => {
     if (searchQuery.length >= 2) {
@@ -82,6 +110,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
     const qty = parseFloat(quantity)
     if (!qty || qty <= 0) return
     onAddFood({ ...selectedFood, serving_size: qty })
+    clearDraft()
     onClose()
   }
 
@@ -93,6 +122,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
   const handleSelectRecipe = (recipe) => {
     if (onAddRecipe) {
       onAddRecipe(recipe)
+      clearDraft()
       onClose()
     }
   }
@@ -108,6 +138,8 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
         fats: parseFloat(newFood.fats) || 0,
       })
       onAddFood(createdFood)
+      setNewFood(defaultNewFood)
+      clearDraft()
       onClose()
     } catch (error) {
       console.error('Erreur création aliment:', error)
@@ -190,7 +222,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
             {showAddForm ? 'Nouvel aliment' : selectedFood ? 'Quantité' : 'Ajouter'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => { clearDraft(); onClose() }}
             style={{
               width: '40px',
               height: '40px',

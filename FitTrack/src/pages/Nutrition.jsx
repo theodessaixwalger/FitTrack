@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Trash, Gear, ChefHat, CookingPot, SunHorizon, Sun, MoonStars, Cookie } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import AddFoodModal from '../components/AddFoodModal'
@@ -25,12 +25,34 @@ function Nutrition() {
     updateNutritionGoals
   } = useNutrition()
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  // Le mobile décharge parfois la page quand on change d'app (mémoire faible) :
+  // on garde la modal ouverte en sessionStorage pour la restaurer au retour.
+  const MODAL_STATE_KEY = 'fittrack_nutrition_add_modal'
+  const savedModalState = (() => {
+    try {
+      const saved = sessionStorage.getItem(MODAL_STATE_KEY)
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      return null
+    }
+  })()
+
+  const [isModalOpen, setIsModalOpen] = useState(savedModalState?.isModalOpen || false)
   const [isMacrosModalOpen, setIsMacrosModalOpen] = useState(false)
-  const [selectedMealType, setSelectedMealType] = useState(null)
+  const [selectedMealType, setSelectedMealType] = useState(savedModalState?.selectedMealType || null)
   const [deletingItem, setDeletingItem] = useState(null)
 
   const today = new Date().toISOString().split('T')[0]
+
+  useEffect(() => {
+    try {
+      if (isModalOpen) {
+        sessionStorage.setItem(MODAL_STATE_KEY, JSON.stringify({ isModalOpen, selectedMealType }))
+      } else {
+        sessionStorage.removeItem(MODAL_STATE_KEY)
+      }
+    } catch {}
+  }, [isModalOpen, selectedMealType])
 
   const handleAddFood = async (food) => {
     try {
