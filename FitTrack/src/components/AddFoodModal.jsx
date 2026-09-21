@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Plus, MagnifyingGlass, CookingPot, ForkKnife } from '@phosphor-icons/react'
-import { searchFoods, addFood } from '../services/foodService'
+import { X, Plus, MagnifyingGlass, CookingPot, ForkKnife, Barcode, WarningCircle } from '@phosphor-icons/react'
+import { searchFoods, addFood, getFoodByBarcode, findFoodByBarcode } from '../services/foodService'
 import { getRecipes, calculateRecipeNutrition } from '../services/recipeService'
+import { normalizeBarcode } from '../utils/barcode'
+import ProductDetails, { OffAttribution } from './ProductDetails'
+
+// Chargé à la demande : la lib de scan et son décodeur WebAssembly pèsent lourd
+const BarcodeScanner = lazy(() => import('./BarcodeScanner'))
 
 // Le mobile décharge parfois la page quand on change d'app (mémoire faible) :
 // on garde le brouillon en sessionStorage pour le restaurer au retour.
@@ -44,6 +49,8 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
   const [newFood, setNewFood] = useState(draft?.newFood || defaultNewFood)
   const [selectedRecipe, setSelectedRecipe] = useState(draft?.selectedRecipe || null) // recette sélectionnée en attente de portions
   const [recipeServings, setRecipeServings] = useState(draft?.recipeServings || '1')
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [createError, setCreateError] = useState('')
 
   // Sauvegarde continue du brouillon tant que la modal est ouverte
   useEffect(() => {
@@ -111,7 +118,56 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
 
   const handleSelectFood = (food) => {
     setSelectedFood(food)
-    setQuantity(String(food.serving_size)) // quantité par défaut = portion
+    // quantité par défaut = portion de l'emballage (produits scannés), sinon portion de référence
+    setQuantity(String(food.serving_quantity || food.serving_size))
+  }
+
+  const closeModal = () => {
+    setScannerOpen(false)
+    clearDraft()
+    onClose()
+  }
+
+  // Appelé par le scanner : une erreur levée ici y est affichée avec « Réessayer »
+  const handleBarcode = async (rawCode) => {
+    const code = normalizeBarcode(rawCode)
+    if (!code) throw new Error('Code-barres invalide.')
+
+    const result = await getFoodByBarcode(code)
+    setScannerOpen(false)
+
+    if (result.found) {
+      handleSelectFood(result.food)
+      return
+    }
+
+    // Introuvable ou incomplet sur Open Food Facts : formulaire de création pré-rempli
+    const partial = result.partial ?? {}
+    setNewFood({
+      ...defaultNewFood,
+      name: partial.name ?? '',
+      brand: partial.brand ?? '',
+      calories: partial.calories ?? 0,
+      proteins: partial.proteins ?? 0,
+      carbs: partial.carbs ?? 0,
+      fats: partial.fats ?? 0,
+      barcode: code,
+    })
+    setCreateError('')
+    setShowAddForm(true)
+  }
+
+  const openCreateForm = () => {
+    // Un code-barres resté d'un scan abandonné ne doit pas suivre une création manuelle
+    setNewFood(food => (food.barcode ? defaultNewFood : food))
+    setCreateError('')
+    setShowAddForm(true)
+  }
+
+  const cancelCreateForm = () => {
+    if (newFood.barcode) setNewFood(defaultNewFood)
+    setCreateError('')
+    setShowAddForm(false)
   }
 
   const handleConfirmFood = () => {
@@ -148,6 +204,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
   }
 
   const handleCreateFood = async () => {
+    setCreateError('')
     try {
       const createdFood = await addFood({
         ...newFood,
@@ -156,13 +213,30 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
         proteins: parseFloat(newFood.proteins) || 0,
         carbs: parseFloat(newFood.carbs) || 0,
         fats: parseFloat(newFood.fats) || 0,
+        // Produit scanné introuvable : il rejoint la base partagée, marqué non vérifié
+        ...(newFood.barcode && { source: 'user', verified: false }),
       })
       onAddFood(createdFood)
       setNewFood(defaultNewFood)
       clearDraft()
       onClose()
     } catch (error) {
+      // Code-barres enregistré entre-temps par un autre user : on reprend sa fiche
+      if (newFood.barcode && error?.code === '23505') {
+        try {
+          const existing = await findFoodByBarcode(newFood.barcode)
+          if (existing) {
+            setNewFood(defaultNewFood)
+            setShowAddForm(false)
+            handleSelectFood(existing)
+            return
+          }
+        } catch (lookupError) {
+          console.error('Erreur lecture aliment existant:', lookupError)
+        }
+      }
       console.error('Erreur création aliment:', error)
+      setCreateError("Impossible de créer l'aliment. Réessaie dans un instant.")
     }
   }
 
@@ -254,7 +328,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
             {showAddForm ? 'Nouvel aliment' : selectedFood ? 'Quantité' : selectedRecipe ? 'Portions' : 'Ajouter'}
           </h2>
           <button
-            onClick={() => { clearDraft(); onClose() }}
+            onClick={closeModal}
             style={{
               width: '40px',
               height: '40px',
@@ -308,7 +382,11 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
           {selectedFood ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-              {/* Identité de l'aliment : même icône que l'onglet Aliments, pas de tuile décorative */}
+              {selectedFood.barcode ? (
+                /* Produit identifié par code-barres : fiche détaillée */
+                <ProductDetails food={selectedFood} />
+              ) : (
+              /* Identité de l'aliment : même icône que l'onglet Aliments, pas de tuile décorative */
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <ForkKnife size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
@@ -320,6 +398,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   {selectedFood.brand && `${selectedFood.brand} · `}Réf. {selectedFood.serving_size}{selectedFood.serving_unit} · {selectedFood.calories} kcal
                 </p>
               </div>
+              )}
 
               {/* Stepper de quantité */}
               <div style={{
@@ -462,6 +541,10 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   Ajouter au repas
                 </button>
               </div>
+
+              {selectedFood.source === 'off' && selectedFood.barcode && (
+                <OffAttribution code={selectedFood.barcode} />
+              )}
             </div>
 
           ) : selectedRecipe ? (
@@ -628,29 +711,37 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
           {/* TAB ALIMENTS */}
           {activeTab === 'food' && !showAddForm ? (
             <>
-              {/* Search Bar */}
-              <div style={{
-                position: 'relative',
-                marginBottom: '20px'
-              }}>
-                <MagnifyingGlass
-                  size={20}
-                  style={{
-                    position: 'absolute',
-                    left: '16px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--text-tertiary)'
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Rechercher un aliment..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="search-field"
-                  style={{ padding: '14px 16px 14px 48px' }}
-                />
+              {/* Search Bar + scan */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                  <MagnifyingGlass
+                    size={20}
+                    style={{
+                      position: 'absolute',
+                      left: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-tertiary)'
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Rechercher un aliment..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="search-field"
+                    style={{ padding: '14px 16px 14px 48px' }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setScannerOpen(true)}
+                  className="icon-btn icon-btn-ghost is-accent"
+                  style={{ width: '50px', height: 'auto', minHeight: '50px', borderRadius: 'var(--r-md)' }}
+                  aria-label="Scanner un code-barres"
+                >
+                  <Barcode size={24} />
+                </button>
               </div>
 
               {/* Search Results */}
@@ -700,7 +791,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
 
               {/* Button to create new food */}
               <button
-                onClick={() => setShowAddForm(true)}
+                onClick={openCreateForm}
                 className="btn"
                 style={{ marginTop: '20px' }}
               >
@@ -804,6 +895,18 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
           ) : (
             /* Add Food Form */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {newFood.barcode && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                  <span className="barcode-chip">
+                    <Barcode size={18} />
+                    {newFood.barcode}
+                  </span>
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    Produit introuvable ou incomplet. Complète sa fiche avec les valeurs de l'emballage : elle sera disponible pour tous au prochain scan.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px' }}>
                   Nom de l'aliment *
@@ -1002,9 +1105,16 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                 </div>
               </div>
 
+              {createError && (
+                <div className="scan-error" role="alert" style={{ marginBottom: 0 }}>
+                  <WarningCircle size={18} />
+                  {createError}
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={cancelCreateForm}
                   className="btn btn-outline"
                   style={{ flex: 1 }}
                 >
@@ -1026,6 +1136,13 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
         </div>
 
       </div>
+
+      {/* Démonté à la fermeture : la caméra est libérée */}
+      {scannerOpen && (
+        <Suspense fallback={<div className="scanner-screen" />}>
+          <BarcodeScanner onClose={() => setScannerOpen(false)} onResult={handleBarcode} />
+        </Suspense>
+      )}
     </div>,
     document.body
   )

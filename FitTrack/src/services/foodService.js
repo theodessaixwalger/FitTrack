@@ -71,6 +71,41 @@ export const deleteFood = async (id) => {
   if (error) throw error
 }
 
+// Rechercher un produit par code-barres (déjà normalisé) : base partagée puis
+// Open Food Facts, via /api/foods/barcode/:code (OFF n'est jamais appelé depuis le front).
+// Renvoie { found: true, food } | { found: false, partial? }.
+export const getFoodByBarcode = async (code) => {
+  const { data: { session } } = await supabase.auth.getSession()
+
+  let res
+  try {
+    res = await fetch(`/api/foods/barcode/${encodeURIComponent(code)}`, {
+      headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+      signal: AbortSignal.timeout(15000),
+    })
+  } catch {
+    throw new Error('Connexion impossible. Vérifie ton réseau et réessaie.')
+  }
+
+  const body = await res.json().catch(() => null)
+  if (!res.ok || !body) {
+    throw new Error(body?.message || 'Erreur serveur. Réessaie dans un instant.')
+  }
+  return body
+}
+
+// Aliment déjà enregistré pour ce code-barres (lecture directe en base)
+export const findFoodByBarcode = async (code) => {
+  const { data, error } = await supabase
+    .from('foods')
+    .select('*')
+    .eq('barcode', code)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
 // Récupérer un aliment par ID
 export const getFoodById = async (id) => {
   const { data, error } = await supabase
