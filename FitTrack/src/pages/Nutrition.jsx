@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Plus, Trash, Gear, ChefHat, CookingPot, SunHorizon, Sun, MoonStars, Cookie } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import AddFoodModal from '../components/AddFoodModal'
@@ -51,17 +51,28 @@ function Nutrition() {
       } else {
         sessionStorage.removeItem(MODAL_STATE_KEY)
       }
-    } catch {}
+    } catch {
+      // sessionStorage indisponible (navigation privée, quota) : état simplement non sauvegardé
+    }
   }, [isModalOpen, selectedMealType])
+
+  // Ajouter plusieurs aliments/recettes d'affilée peut déclencher deux appels
+  // avant que le premier `refreshNutrition` n'ait mis `meals` à jour : ce cache
+  // évite de créer deux repas en double pour le même type/jour dans ce cas.
+  const pendingMealsRef = useRef({})
+
+  const getOrCreateMeal = async (mealType) => {
+    const existing = meals.find(m => m.meal_type === mealType)
+    if (existing) return existing
+    if (!pendingMealsRef.current[mealType]) {
+      pendingMealsRef.current[mealType] = createMeal(user.id, mealType, today)
+    }
+    return pendingMealsRef.current[mealType]
+  }
 
   const handleAddFood = async (food) => {
     try {
-      let meal = meals.find(m => m.meal_type === selectedMealType)
-
-      if (!meal) {
-        meal = await createMeal(user.id, selectedMealType, today)
-      }
-
+      const meal = await getOrCreateMeal(selectedMealType)
       await addFoodToMeal(meal.id, food.id, food.serving_size)
       await refreshNutrition()
     } catch (error) {
@@ -69,13 +80,10 @@ function Nutrition() {
     }
   }
 
-  const handleAddRecipe = async (recipe) => {
+  const handleAddRecipe = async (recipe, servings = 1) => {
     try {
-      let meal = meals.find(m => m.meal_type === selectedMealType)
-      if (!meal) {
-        meal = await createMeal(user.id, selectedMealType, today)
-      }
-      await addRecipeEntryToMeal(meal.id, recipe.id, 1)
+      const meal = await getOrCreateMeal(selectedMealType)
+      await addRecipeEntryToMeal(meal.id, recipe.id, servings)
       await refreshNutrition()
     } catch (error) {
       console.error('Erreur ajout recette:', error)

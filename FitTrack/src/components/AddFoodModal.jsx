@@ -42,17 +42,25 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
   const [recipesLoading, setRecipesLoading] = useState(false)
   const [recipeSearch, setRecipeSearch] = useState('')
   const [newFood, setNewFood] = useState(draft?.newFood || defaultNewFood)
+  const [selectedRecipe, setSelectedRecipe] = useState(draft?.selectedRecipe || null) // recette sélectionnée en attente de portions
+  const [recipeServings, setRecipeServings] = useState(draft?.recipeServings || '1')
 
   // Sauvegarde continue du brouillon tant que la modal est ouverte
   useEffect(() => {
     if (!isOpen) return
     try {
-      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ activeTab, showAddForm, selectedFood, quantity, newFood }))
-    } catch {}
-  }, [isOpen, activeTab, showAddForm, selectedFood, quantity, newFood])
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ activeTab, showAddForm, selectedFood, quantity, newFood, selectedRecipe, recipeServings }))
+    } catch {
+      // sessionStorage indisponible (navigation privée, quota) : brouillon simplement non sauvegardé
+    }
+  }, [isOpen, activeTab, showAddForm, selectedFood, quantity, newFood, selectedRecipe, recipeServings])
 
   const clearDraft = () => {
-    try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
+    try {
+      sessionStorage.removeItem(DRAFT_KEY)
+    } catch {
+      // sessionStorage indisponible : rien à nettoyer
+    }
   }
 
   useEffect(() => {
@@ -120,11 +128,23 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
   }
 
   const handleSelectRecipe = (recipe) => {
-    if (onAddRecipe) {
-      onAddRecipe(recipe)
-      clearDraft()
-      onClose()
-    }
+    setSelectedRecipe(recipe)
+    setRecipeServings('1')
+  }
+
+  const handleBackFromRecipeQty = () => {
+    setSelectedRecipe(null)
+    setRecipeServings('1')
+  }
+
+  const handleConfirmRecipe = () => {
+    const servings = parseFloat(recipeServings)
+    if (!servings || servings <= 0) return
+    if (onAddRecipe) onAddRecipe(selectedRecipe, servings)
+    setSelectedRecipe(null)
+    setRecipeServings('1')
+    clearDraft()
+    onClose()
   }
 
   const handleCreateFood = async () => {
@@ -159,6 +179,18 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
       proteins: Math.round(selectedFood.proteins * ratio * 10) / 10,
       carbs: Math.round(selectedFood.carbs * ratio * 10) / 10,
       fats: Math.round(selectedFood.fats * ratio * 10) / 10,
+    }
+  })() : null
+
+  // Macros prévisualisées selon le nombre de portions de recette saisi
+  const previewRecipeMacros = selectedRecipe && recipeServings ? (() => {
+    const servings = parseFloat(recipeServings) || 0
+    const nutrition = calculateRecipeNutrition(selectedRecipe, servings)
+    return {
+      calories: Math.round(nutrition.calories),
+      proteins: Math.round(nutrition.proteins * 10) / 10,
+      carbs: Math.round(nutrition.carbs * 10) / 10,
+      fats: Math.round(nutrition.fats * 10) / 10,
     }
   })() : null
 
@@ -219,7 +251,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
           alignItems: 'center'
         }}>
           <h2 style={{ fontSize: '20px', fontWeight: '800' }}>
-            {showAddForm ? 'Nouvel aliment' : selectedFood ? 'Quantité' : 'Ajouter'}
+            {showAddForm ? 'Nouvel aliment' : selectedFood ? 'Quantité' : selectedRecipe ? 'Portions' : 'Ajouter'}
           </h2>
           <button
             onClick={() => { clearDraft(); onClose() }}
@@ -241,7 +273,7 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
         </div>
 
         {/* Tabs - masqués quand on saisit une quantité */}
-        {!showAddForm && !selectedFood && (
+        {!showAddForm && !selectedFood && !selectedRecipe && (
           <div style={{
             // Inset uniforme sur les 4 cotes : les pilules etaient collees
             // au bord bas (padding 12px en haut, 0 en bas).
@@ -274,38 +306,25 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
         <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
           {/* ÉCRAN SAISIE QUANTITÉ */}
           {selectedFood ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-              {/* Carte aliment avec gradient subtil */}
-              <div style={{
-                padding: '16px 18px',
-                background: 'linear-gradient(135deg, rgba(255,107,53,0.08) 0%, rgba(247,147,30,0.04) 100%)',
-                borderRadius: '18px',
-                border: '1.5px solid rgba(255,107,53,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px'
-              }}>
-                <div style={{
-                  width: '44px', height: '44px', borderRadius: '14px',
-                  background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '20px', flexShrink: 0, boxShadow: '0 4px 12px rgba(255,107,53,0.3)'
-                }}>🥗</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: '800', fontSize: '15px', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {/* Identité de l'aliment : même icône que l'onglet Aliments, pas de tuile décorative */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <ForkKnife size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                  <span style={{ fontWeight: '800', fontSize: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {selectedFood.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                    {selectedFood.brand && `${selectedFood.brand} · `}Réf. {selectedFood.serving_size}{selectedFood.serving_unit}
-                  </div>
+                  </span>
                 </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600', margin: 0, marginLeft: '24px' }}>
+                  {selectedFood.brand && `${selectedFood.brand} · `}Réf. {selectedFood.serving_size}{selectedFood.serving_unit} · {selectedFood.calories} kcal
+                </p>
               </div>
 
               {/* Stepper de quantité */}
               <div style={{
                 background: 'var(--bg-secondary)',
-                borderRadius: '20px',
+                borderRadius: 'var(--r-md)',
                 padding: '20px',
               }}>
                 <div style={{ textAlign: 'center', marginBottom: '16px', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -317,12 +336,12 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   <button
                     onClick={() => setQuantity(q => String(Math.max(0.1, Math.round(((parseFloat(q) || 0) - 5) * 10) / 10)))}
                     style={{
-                      width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
+                      width: '52px', height: '52px', borderRadius: 'var(--r-sm)', flexShrink: 0,
                       border: 'none', background: 'var(--surface)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
                       fontSize: '24px', fontWeight: '300', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--text-primary)', transition: 'all 0.15s'
+                      color: 'var(--text-primary)', transition: 'transform 0.15s'
                     }}
                     onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
                     onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
@@ -337,15 +356,17 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                       autoFocus
                       style={{
                         width: '100%', padding: '14px 48px 14px 16px',
-                        borderRadius: '16px',
-                        border: '2.5px solid var(--primary)',
+                        borderRadius: 'var(--r-sm)',
+                        border: '1.5px solid var(--border-strong)',
                         fontSize: '28px', fontWeight: '900',
+                        fontVariantNumeric: 'tabular-nums',
                         textAlign: 'center', outline: 'none',
                         color: 'var(--text-primary)',
                         background: 'var(--surface)',
-                        boxShadow: '0 0 0 4px rgba(255,107,53,0.1)',
-                        transition: 'all 0.2s'
+                        transition: 'border-color 0.2s ease'
                       }}
+                      onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                      onBlur={e => e.currentTarget.style.borderColor = 'var(--border-strong)'}
                     />
                     <span style={{
                       position: 'absolute', right: '14px', top: '50%',
@@ -358,13 +379,12 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                   <button
                     onClick={() => setQuantity(q => String(Math.round(((parseFloat(q) || 0) + 5) * 10) / 10))}
                     style={{
-                      width: '52px', height: '52px', borderRadius: '16px', flexShrink: 0,
-                      border: 'none',
-                      background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                      boxShadow: '0 4px 12px rgba(255,107,53,0.35)',
+                      width: '52px', height: '52px', borderRadius: 'var(--r-sm)', flexShrink: 0,
+                      border: 'none', background: 'var(--surface)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
                       fontSize: '24px', fontWeight: '300', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'white', transition: 'all 0.15s'
+                      color: 'var(--text-primary)', transition: 'transform 0.15s'
                     }}
                     onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
                     onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
@@ -382,10 +402,9 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                         style={{
                           padding: '7px 13px', borderRadius: '20px', fontSize: '12px',
                           fontWeight: '700', cursor: 'pointer', transition: 'all 0.15s',
-                          border: `2px solid ${active ? 'var(--primary)' : 'transparent'}`,
-                          background: active ? 'rgba(255,107,53,0.12)' : 'var(--surface)',
-                          color: active ? 'var(--primary)' : 'var(--text-secondary)',
-                          boxShadow: active ? '0 0 0 1px rgba(255,107,53,0.2)' : 'none'
+                          border: `1.5px solid ${active ? 'var(--accent-deep)' : 'var(--border-light)'}`,
+                          background: active ? 'var(--accent-ghost)' : 'transparent',
+                          color: active ? 'var(--accent)' : 'var(--text-secondary)'
                         }}
                       >{v}{selectedFood.serving_unit}</button>
                     )
@@ -393,90 +412,216 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                 </div>
               </div>
 
-              {/* Prévisualisation macros */}
+              {/* Résumé nutritionnel : une seule bande, pas de bannière colorée */}
               {previewMacros && (
                 <div style={{
-                  borderRadius: '18px',
-                  overflow: 'hidden',
-                  border: '1.5px solid var(--border-light)',
+                  display: 'flex',
+                  borderRadius: 'var(--r-md)',
+                  border: '1px solid var(--border-light)',
+                  overflow: 'hidden'
                 }}>
-                  {/* Calories en en-tête */}
-                  <div style={{
-                    padding: '14px 18px',
-                    background: 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                  }}>
-                    <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', fontWeight: '700' }}>
-                      Pour {quantity || '0'}{selectedFood.serving_unit}
-                    </span>
-                    <span style={{ color: 'white', fontSize: '22px', fontWeight: '900' }}>
-                      {previewMacros.calories} <span style={{ fontSize: '13px', fontWeight: '600', opacity: 0.85 }}>kcal</span>
-                    </span>
+                  <div style={{ flex: '1.2 1 0', padding: '14px 12px', borderRight: '1px solid var(--border-light)' }}>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                      {previewMacros.calories}
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      kcal
+                    </div>
                   </div>
-
-                  {/* Macros en grille */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: 'var(--bg-secondary)' }}>
-                    {[
-                      { label: 'Protéines', value: previewMacros.proteins, color: '#FF6B35', bg: 'rgba(255,107,53,0.06)' },
-                      { label: 'Glucides', value: previewMacros.carbs, color: '#4ECDC4', bg: 'rgba(78,205,196,0.06)' },
-                      { label: 'Lipides', value: previewMacros.fats, color: '#667EEA', bg: 'rgba(102,126,234,0.06)' },
-                    ].map((macro, i) => (
-                      <div key={i} style={{
-                        padding: '14px 8px',
-                        textAlign: 'center',
-                        background: macro.bg,
-                        borderLeft: i > 0 ? '1px solid var(--border-light)' : 'none'
-                      }}>
-                        <div style={{ fontSize: '18px', fontWeight: '900', color: macro.color, marginBottom: '3px' }}>
-                          {macro.value}g
-                        </div>
-                        <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          {macro.label}
-                        </div>
+                  {[
+                    { label: 'Protéines', value: previewMacros.proteins },
+                    { label: 'Glucides', value: previewMacros.carbs },
+                    { label: 'Lipides', value: previewMacros.fats },
+                  ].map((macro, i) => (
+                    <div key={i} style={{
+                      flex: '1 1 0', padding: '14px 8px', textAlign: 'center',
+                      borderRight: i < 2 ? '1px solid var(--border-light)' : 'none'
+                    }}>
+                      <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                        {macro.value}g
                       </div>
-                    ))}
-                  </div>
+                      <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {macro.label}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
               {/* Boutons */}
               <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
-                <button
-                  onClick={handleBackFromQuantity}
-                  style={{
-                    flex: 1, padding: '14px', borderRadius: '16px',
-                    border: '2px solid var(--border-light)',
-                    background: 'transparent', cursor: 'pointer',
-                    fontWeight: '700', fontSize: '15px',
-                    color: 'var(--text-secondary)', transition: 'all 0.2s'
-                  }}
-                  onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--text-secondary)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-                  onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-                >
+                <button onClick={handleBackFromQuantity} className="btn btn-outline" style={{ flex: 1 }}>
                   ← Retour
                 </button>
                 <button
                   onClick={handleConfirmFood}
+                  className="btn"
+                  style={{ flex: 2 }}
                   disabled={!quantity || parseFloat(quantity) <= 0}
-                  style={{
-                    flex: 2, padding: '14px', borderRadius: '16px',
-                    border: 'none',
-                    background: (!quantity || parseFloat(quantity) <= 0)
-                      ? 'var(--border-light)'
-                      : 'linear-gradient(135deg, #FF6B35, #F7931E)',
-                    cursor: (!quantity || parseFloat(quantity) <= 0) ? 'not-allowed' : 'pointer',
-                    fontWeight: '800', fontSize: '15px', color: 'white',
-                    boxShadow: (!quantity || parseFloat(quantity) <= 0)
-                      ? 'none'
-                      : '0 4px 16px rgba(255,107,53,0.4)',
-                    transition: 'all 0.2s'
-                  }}
                 >
                   Ajouter au repas
                 </button>
               </div>
             </div>
 
+          ) : selectedRecipe ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+              {/* Identité de la recette : même icône que dans la liste, pas de tuile décorative */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <CookingPot size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+                  <span style={{ fontWeight: '800', fontSize: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedRecipe.name}
+                  </span>
+                </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600', margin: 0, marginLeft: '24px' }}>
+                  Recette de {selectedRecipe.servings} portion{selectedRecipe.servings > 1 ? 's' : ''} · {Math.round(calculateRecipeNutrition(selectedRecipe, 1).calories)} kcal/portion
+                </p>
+              </div>
+
+              {/* Stepper de portions */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                borderRadius: 'var(--r-md)',
+                padding: '20px',
+              }}>
+                <div style={{ textAlign: 'center', marginBottom: '16px', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Combien de portions ?
+                </div>
+
+                {/* Contrôle principal */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <button
+                    onClick={() => setRecipeServings(s => String(Math.max(0.5, Math.round(((parseFloat(s) || 0) - 0.5) * 10) / 10)))}
+                    style={{
+                      width: '52px', height: '52px', borderRadius: 'var(--r-sm)', flexShrink: 0,
+                      border: 'none', background: 'var(--surface)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                      fontSize: '24px', fontWeight: '300', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--text-primary)', transition: 'transform 0.15s'
+                    }}
+                    onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
+                    onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                  >−</button>
+
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={recipeServings}
+                      onChange={e => setRecipeServings(sanitizeDecimal(e.target.value))}
+                      autoFocus
+                      style={{
+                        width: '100%', padding: '14px 78px 14px 16px',
+                        borderRadius: 'var(--r-sm)',
+                        border: '1.5px solid var(--border-strong)',
+                        fontSize: '28px', fontWeight: '900',
+                        fontVariantNumeric: 'tabular-nums',
+                        textAlign: 'center', outline: 'none',
+                        color: 'var(--text-primary)',
+                        background: 'var(--surface)',
+                        transition: 'border-color 0.2s ease'
+                      }}
+                      onFocus={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                      onBlur={e => e.currentTarget.style.borderColor = 'var(--border-strong)'}
+                    />
+                    <span style={{
+                      position: 'absolute', right: '14px', top: '50%',
+                      transform: 'translateY(-50%)',
+                      fontSize: '14px', fontWeight: '700',
+                      color: 'var(--text-secondary)', pointerEvents: 'none'
+                    }}>portion{parseFloat(recipeServings) > 1 ? 's' : ''}</span>
+                  </div>
+
+                  <button
+                    onClick={() => setRecipeServings(s => String(Math.round(((parseFloat(s) || 0) + 0.5) * 10) / 10))}
+                    style={{
+                      width: '52px', height: '52px', borderRadius: 'var(--r-sm)', flexShrink: 0,
+                      border: 'none', background: 'var(--surface)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                      fontSize: '24px', fontWeight: '300', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--text-primary)', transition: 'transform 0.15s'
+                    }}
+                    onMouseDown={e => e.currentTarget.style.transform = 'scale(0.92)'}
+                    onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                  >+</button>
+                </div>
+
+                {/* Raccourcis rapides */}
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  {[0.5, 1, 1.5, 2, 3].map(v => {
+                    const active = recipeServings === String(v)
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setRecipeServings(String(v))}
+                        style={{
+                          padding: '7px 13px', borderRadius: '20px', fontSize: '12px',
+                          fontWeight: '700', cursor: 'pointer', transition: 'all 0.15s',
+                          border: `1.5px solid ${active ? 'var(--accent-deep)' : 'var(--border-light)'}`,
+                          background: active ? 'var(--accent-ghost)' : 'transparent',
+                          color: active ? 'var(--accent)' : 'var(--text-secondary)'
+                        }}
+                      >{v}</button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Résumé nutritionnel : une seule bande, pas de bannière colorée */}
+              {previewRecipeMacros && (
+                <div style={{
+                  display: 'flex',
+                  borderRadius: 'var(--r-md)',
+                  border: '1px solid var(--border-light)',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ flex: '1.2 1 0', padding: '14px 12px', borderRight: '1px solid var(--border-light)' }}>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                      {previewRecipeMacros.calories}
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      kcal
+                    </div>
+                  </div>
+                  {[
+                    { label: 'Protéines', value: previewRecipeMacros.proteins },
+                    { label: 'Glucides', value: previewRecipeMacros.carbs },
+                    { label: 'Lipides', value: previewRecipeMacros.fats },
+                  ].map((macro, i) => (
+                    <div key={i} style={{
+                      flex: '1 1 0', padding: '14px 8px', textAlign: 'center',
+                      borderRight: i < 2 ? '1px solid var(--border-light)' : 'none'
+                    }}>
+                      <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                        {macro.value}g
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {macro.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Boutons */}
+              <div style={{ display: 'flex', gap: '10px', paddingTop: '4px' }}>
+                <button onClick={handleBackFromRecipeQty} className="btn btn-outline" style={{ flex: 1 }}>
+                  ← Retour
+                </button>
+                <button
+                  onClick={handleConfirmRecipe}
+                  className="btn"
+                  style={{ flex: 2 }}
+                  disabled={!recipeServings || parseFloat(recipeServings) <= 0}
+                >
+                  Ajouter au repas
+                </button>
+              </div>
+            </div>
 
           ) : (
           <>
