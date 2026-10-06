@@ -27,6 +27,33 @@ export async function createProgram(userId, name) {
   return data
 }
 
+// Renommer un programme
+export async function updateProgram(programId, name) {
+  const { data, error } = await supabase
+    .from('workout_programs')
+    .update({ name })
+    .eq('id', programId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// Supprimer un programme (et ses jours)
+export async function deleteProgram(programId) {
+  const { error: daysError } = await supabase
+    .from('program_days')
+    .delete()
+    .eq('program_id', programId)
+  if (daysError) throw daysError
+
+  const { error } = await supabase
+    .from('workout_programs')
+    .delete()
+    .eq('id', programId)
+  if (error) throw error
+}
+
 // Jours
 export async function getProgramDays(programId) {
   const { data } = await supabase
@@ -296,6 +323,19 @@ export async function createExercise(userId, exerciseData) {
   }
   
   return data
+}
+
+// Supprimer un exercice de la bibliothèque
+export async function deleteLibraryExercise(exerciseId) {
+  const { error } = await supabase
+    .from('exercises')
+    .delete()
+    .eq('id', exerciseId)
+
+  if (error) {
+    console.error("Erreur lors de la suppression de l'exercice:", error)
+    throw error
+  }
 }
 
 // Mettre à jour un exercice existant

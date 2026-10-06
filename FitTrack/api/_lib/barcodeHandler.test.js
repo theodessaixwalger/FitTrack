@@ -108,5 +108,8 @@ describe('handleBarcodeRequest', () => {
   it('refuse de démarrer sans configuration complète', async () => {
     const res = await handleBarcodeRequest(request('3274080005003'), { ...env, OFF_CONTACT_EMAIL: '' }, () => services)
     expect(res.status).toBe(500)
+    const body = await res.json()
+    expect(body.message).toContain('OFF_CONTACT_EMAIL')
+    expect(body.message).not.toContain('service-role') // jamais de valeur dans la réponse
   })
 })

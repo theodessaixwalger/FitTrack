@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import {
-  X, Plus, MagnifyingGlass,
+  X, Plus, MagnifyingGlass, Trash,
   Barbell, PersonArmsSpread, PersonSimpleRun, BoxingGlove,
   Fire, Heartbeat, PersonSimple, Sneaker, HandFist
 } from '@phosphor-icons/react'
-import { getAllExercises, getMuscleGroupIcon, createExercise } from '../services/exerciceService'
+import { getAllExercises, getMuscleGroupIcon, createExercise, deleteLibraryExercise } from '../services/exerciceService'
 
 // getMuscleGroupIcon renvoie un nom ; on le resout ici en composant.
 const MUSCLE_ICONS = {
@@ -139,6 +139,21 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
       console.error('Erreur ajout exercice:', error)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteLibraryExercise = async (e, exercise) => {
+    e.stopPropagation()
+    if (!confirm(`Supprimer l'exercice "${exercise.name}" de ta bibliothèque ?`)) return
+    try {
+      await deleteLibraryExercise(exercise.id)
+      setExercises(prev => prev.filter(ex => ex.id !== exercise.id))
+    } catch (error) {
+      if (error?.code === '23503') {
+        alert("Impossible de supprimer cet exercice : il est encore utilisé dans un programme ou un historique.")
+      } else {
+        alert("Erreur lors de la suppression de l'exercice")
+      }
     }
   }
 
@@ -376,7 +391,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                             ? 'var(--primary)' 
                             : 'var(--surface-elevated)',
                           color: selectedMuscleGroup === group 
-                            ? 'white' 
+                            ? 'var(--ink)' 
                             : 'var(--text-secondary)',
                           fontSize: '13px',
                           fontWeight: '600',
@@ -413,7 +428,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                     transition: 'all 0.2s ease'
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
+                    e.currentTarget.style.background = 'var(--accent-ghost)'
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.background = 'transparent'
@@ -485,15 +500,25 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                                 {exercise.equipment && <span>• {exercise.equipment}</span>}
                               </div>
                             </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteLibraryExercise(e, exercise)}
+                              className="icon-btn icon-btn-ghost is-danger"
+                              title="Supprimer l'exercice"
+                            >
+                              <Trash size={18} />
+                            </button>
                             <div style={{
                               padding: '6px 12px',
                               borderRadius: '8px',
                               background: 'var(--primary)',
-                              color: 'white',
+                              color: 'var(--ink)',
                               fontSize: '12px',
                               fontWeight: '700'
                             }}>
                               Sélectionner
+                            </div>
                             </div>
                           </div>
                         </div>
@@ -576,7 +601,7 @@ function AddExerciseModal({ isOpen, onClose, onAddExercise, userId }) {
                           borderRadius: '10px',
                           border: 'none',
                           background: exerciseMode === mode.id ? 'var(--primary)' : 'transparent',
-                          color: exerciseMode === mode.id ? 'white' : 'var(--text-secondary)',
+                          color: exerciseMode === mode.id ? 'var(--ink)' : 'var(--text-secondary)',
                           fontSize: '14px',
                           fontWeight: '700',
                           cursor: 'pointer',

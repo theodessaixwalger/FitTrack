@@ -268,7 +268,7 @@ function ExerciseHistoryModal({ isOpen, onClose, userId, exerciseName }) {
                             padding: '2px 8px',
                             borderRadius: '4px',
                             background: 'var(--primary)',
-                            color: 'white',
+                            color: 'var(--ink)',
                             fontWeight: '700'
                           }}>
                             DERNIER

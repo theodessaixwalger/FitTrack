@@ -81,8 +81,10 @@ export async function handleBarcodeRequest(request, env = process.env, makeServi
 
   const config = readConfig(env)
   if (config.missing.length) {
-    console.error(`[barcode] variables d'environnement manquantes : ${config.missing.join(', ')}`)
-    return json(500, { error: 'server_misconfigured', message: 'Configuration serveur incomplète.' })
+    const missing = config.missing.join(', ')
+    console.error(`[barcode] variables d'environnement manquantes : ${missing}`)
+    // Noms seulement, jamais les valeurs : permet de diagnostiquer depuis l'app
+    return json(500, { error: 'server_misconfigured', message: `Configuration serveur incomplète (manquant : ${missing}).` })
   }
 
   const services = makeServices(config)

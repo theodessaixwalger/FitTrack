@@ -4,6 +4,8 @@ import { supabase } from "../config/supabase";
 import {
   getActiveProgram,
   createProgram,
+  updateProgram,
+  deleteProgram,
   getProgramDays,
   addDay,
   addExercise,
@@ -64,6 +66,9 @@ function Training() {
   const [editDayName, setEditDayName] = useState("");
   const [editDayOfWeek, setEditDayOfWeek] = useState(1);
   const [deletingDay, setDeletingDay] = useState(null);
+  const [editingProgram, setEditingProgram] = useState(false);
+  const [editProgramName, setEditProgramName] = useState("");
+  const [deletingProgram, setDeletingProgram] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -112,6 +117,31 @@ function Training() {
     setProgramName("");
     setShowNewProgram(false);
     loadData();
+  }
+
+  async function handleUpdateProgram(e) {
+    e.preventDefault();
+    try {
+      await updateProgram(program.id, editProgramName);
+      setEditingProgram(false);
+      loadData();
+    } catch (error) {
+      console.error('Erreur lors de la modification du programme:', error);
+      alert('Erreur lors de la modification du programme');
+    }
+  }
+
+  async function handleDeleteProgram() {
+    if (!confirm(`Supprimer le programme "${program.name}" et tous ses jours et exercices ?`)) return;
+    setDeletingProgram(true);
+    try {
+      await deleteProgram(program.id);
+      await loadData();
+    } catch (error) {
+      console.error('Erreur lors de la suppression du programme:', error);
+      alert('Erreur lors de la suppression du programme');
+    }
+    setDeletingProgram(false);
   }
 
   async function handleAddDay(e) {
@@ -636,7 +666,30 @@ function Training() {
       <div className="page-content">
         {/* Hero Card - Programme actif */}
         <div className="hero-card glow-card glow-accent">
-          <div className="label">Programme actif</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div className="label">Programme actif</div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() => {
+                  setEditProgramName(program.name);
+                  setEditingProgram(true);
+                }}
+                disabled={deletingProgram}
+                className="icon-btn icon-btn-ghost"
+                title="Modifier le programme"
+              >
+                <PencilSimple size={18} />
+              </button>
+              <button
+                onClick={handleDeleteProgram}
+                disabled={deletingProgram}
+                className="icon-btn icon-btn-ghost is-danger"
+                title="Supprimer le programme"
+              >
+                <Trash size={18} />
+              </button>
+            </div>
+          </div>
           <div
             className="value"
             style={{ fontSize: "32px", marginBottom: "8px" }}
@@ -793,6 +846,39 @@ function Training() {
                 </button>
                 <button type="submit" className="btn" style={{ flex: 1 }}>
                   Ajouter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Modifier Programme */}
+      {editingProgram && (
+        <div className="modal-overlay" onClick={() => setEditingProgram(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginBottom: "20px" }}>Modifier le programme</h2>
+            <form onSubmit={handleUpdateProgram}>
+              <input
+                type="text"
+                placeholder="Nom du programme"
+                value={editProgramName}
+                onChange={(e) => setEditProgramName(e.target.value)}
+                required
+                autoFocus
+                style={{ marginBottom: "20px" }}
+              />
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setEditingProgram(false)}
+                  style={{ flex: 1 }}
+                >
+                  Annuler
+                </button>
+                <button type="submit" className="btn" style={{ flex: 1 }}>
+                  Enregistrer
                 </button>
               </div>
             </form>
