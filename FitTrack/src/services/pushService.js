@@ -102,14 +102,3 @@ export async function saveNotificationPreferences(changes) {
     }, { onConflict: 'user_id' })
   if (error) throw error
 }
-
-export async function sendTestNotification() {
-  const { data: { session } } = await supabase.auth.getSession()
-  const response = await fetch('/api/notifications/test', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${session?.access_token}` },
-  })
-  const body = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(body.message || "Échec de l'envoi de la notification de test")
-  return body
-}

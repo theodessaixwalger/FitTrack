@@ -6,7 +6,6 @@ import react from '@vitejs/plugin-react'
 const DEV_API_ROUTES = [
   { path: '/api/foods/barcode', module: '/api/_lib/barcodeHandler.js', handler: 'handleBarcodeRequest' },
   { path: '/api/notifications/cron', module: '/api/_lib/notificationsHandler.js', handler: 'handleCronRequest' },
-  { path: '/api/notifications/test', module: '/api/_lib/notificationsHandler.js', handler: 'handleTestRequest' },
 ]
 
 function apiDev() {

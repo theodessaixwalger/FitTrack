@@ -1,5 +1,5 @@
 import { ArrowLeft, Globe, Bell, Trash, Lock, CaretRight, X } from '@phosphor-icons/react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase'
 import {
@@ -10,8 +10,7 @@ import {
   enablePush,
   disablePush,
   getNotificationPreferences,
-  saveNotificationPreferences,
-  sendTestNotification
+  saveNotificationPreferences
 } from '../services/pushService'
 
 function Toggle({ checked, onChange, disabled = false, label }) {
@@ -74,6 +73,7 @@ function SettingRow({ title, description, children }) {
 
 function Settings() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [language, setLanguage] = useState('fr')
   const [notificationPrefs, setNotificationPrefs] = useState(DEFAULT_NOTIFICATION_PREFS)
   const [pushSupported] = useState(() => isPushSupported())
@@ -92,13 +92,18 @@ function Settings() {
   const [passwordSuccess, setPasswordSuccess] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
 
-  // Scroll to top when component mounts
+  // Scroll to top when component mounts, ou vers la section demandée (#notifications)
   useEffect(() => {
+    const target = location.hash ? document.getElementById(location.hash.slice(1)) : null
+    if (target) {
+      target.scrollIntoView({ behavior: 'instant', block: 'start' })
+      return
+    }
     const mainElement = document.querySelector('main')
     if (mainElement) {
       mainElement.scrollTo({ top: 0, behavior: 'instant' })
     }
-  }, [])
+  }, [location.hash])
 
   // Load settings from localStorage
   useEffect(() => {
@@ -150,19 +155,6 @@ function Settings() {
     } catch (error) {
       console.error('Erreur activation notifications:', error)
       setPushMessage({ type: 'error', text: "Impossible d'activer les notifications sur cet appareil." })
-    } finally {
-      setPushBusy(false)
-    }
-  }
-
-  const handleTestNotification = async () => {
-    setPushBusy(true)
-    setPushMessage(null)
-    try {
-      await sendTestNotification()
-      setPushMessage({ type: 'success', text: 'Notification envoyée, elle devrait arriver dans quelques secondes.' })
-    } catch (error) {
-      setPushMessage({ type: 'error', text: error.message })
     } finally {
       setPushBusy(false)
     }
@@ -311,7 +303,7 @@ function Settings() {
         </div>
 
         {/* Notifications */}
-        <div className="section">
+        <div className="section" id="notifications" style={{ scrollMarginTop: '16px' }}>
           <h2 className="section-title">
             <Bell size={20} className="section-icon" style={{ marginRight: '8px' }} />
             Notifications
@@ -352,18 +344,6 @@ function Settings() {
                     label="Notifications push sur cet appareil"
                   />
                 </SettingRow>
-
-                {pushSubscribed && (
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={handleTestNotification}
-                    disabled={pushBusy}
-                    style={{ width: '100%' }}
-                  >
-                    Envoyer une notification de test
-                  </button>
-                )}
               </>
             )}
 

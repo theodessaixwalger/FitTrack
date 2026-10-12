@@ -77,13 +77,6 @@ export function buildMessage(kind, { streak } = {}) {
         url: '/',
         tag: 'streak-reminder',
       }
-    case 'test':
-      return {
-        title: 'FitTrack',
-        body: 'Les notifications fonctionnent sur cet appareil ✅',
-        url: '/settings',
-        tag: 'test',
-      }
     default:
       throw new Error(`Type de notification inconnu : ${kind}`)
   }
@@ -174,15 +167,8 @@ function createServices(config) {
   }
 
   return {
-    getUser: async (token) => {
-      const { data, error } = await adminClient.auth.getUser(token)
-      return error ? null : data.user
-    },
-
-    listSubscriptions: async (userId) => {
-      let query = adminClient.from('push_subscriptions').select('user_id, endpoint, p256dh, auth')
-      if (userId) query = query.eq('user_id', userId)
-      const { data, error } = await query
+    listSubscriptions: async () => {
+      const { data, error } = await adminClient.from('push_subscriptions').select('user_id, endpoint, p256dh, auth')
       if (error) throw error
       return data
     },
@@ -296,30 +282,5 @@ export async function handleCronRequest(request, env = process.env, makeServices
   } catch (err) {
     console.error('[push] cron :', err)
     return json(500, { error: 'internal' })
-  }
-}
-
-// POST /api/notifications/test — envoie une notification de test à l'utilisateur connecté
-export async function handleTestRequest(request, env = process.env, makeServices = createServices) {
-  if (request.method !== 'POST') return json(405, { error: 'method_not_allowed' }, { Allow: 'POST' })
-
-  const config = readConfig(env)
-  if (config.missing.length) return misconfigured(config.missing)
-
-  const services = makeServices(config)
-
-  const token = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1]
-  const user = token ? await services.getUser(token) : null
-  if (!user) return json(401, { error: 'unauthorized', message: 'Session expirée, reconnectez-vous.' })
-
-  try {
-    const subscriptions = await services.listSubscriptions(user.id)
-    if (subscriptions.length === 0) {
-      return json(404, { error: 'no_subscription', message: "Aucun appareil abonné. Activez d'abord les notifications." })
-    }
-    return json(200, await sendToSubscriptions(subscriptions, buildMessage('test'), services))
-  } catch (err) {
-    console.error('[push] test :', err)
-    return json(500, { error: 'internal', message: 'Erreur serveur. Réessayez dans un instant.' })
   }
 }

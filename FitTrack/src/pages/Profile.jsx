@@ -860,7 +860,11 @@ function Profile() {
                 <CaretRight weight="bold" size={20} color="var(--text-tertiary)" />
               </div>
 
-              <div className="menu-item">
+              <div
+                className="menu-item"
+                onClick={() => navigate('/settings#notifications')}
+                style={{ cursor: 'pointer' }}
+              >
                 <div
                   style={{
                     display: "flex",

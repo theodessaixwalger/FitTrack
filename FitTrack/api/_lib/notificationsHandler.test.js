@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   dueReminders,
   handleCronRequest,
-  handleTestRequest,
   localDateTime,
   runReminders,
   streakAtRisk,
@@ -11,7 +10,6 @@ import {
 const sub = (userId, endpoint = `https://push.example/${userId}`) => ({ user_id: userId, endpoint, p256dh: 'p', auth: 'a' })
 
 const makeServices = (overrides = {}) => ({
-  getUser: vi.fn().mockResolvedValue({ id: 'user-1' }),
   listSubscriptions: vi.fn().mockResolvedValue([sub('user-1')]),
   getPreferences: vi.fn().mockResolvedValue(new Map()),
   hasMeal: vi.fn().mockResolvedValue(false),
@@ -178,37 +176,5 @@ describe('handleCronRequest', () => {
     const body = await res.json()
     expect(body.message).toContain('CRON_SECRET')
     expect(body.message).not.toContain('private')
-  })
-})
-
-describe('handleTestRequest', () => {
-  const request = (token = 'jwt') => new Request('http://localhost/api/notifications/test', {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
-
-  it("envoie uniquement aux appareils de l'utilisateur connecté", async () => {
-    const services = makeServices()
-
-    const res = await handleTestRequest(request(), env, () => services)
-
-    expect(res.status).toBe(200)
-    expect(services.listSubscriptions).toHaveBeenCalledWith('user-1')
-    expect(services.sendPush).toHaveBeenCalledTimes(1)
-  })
-
-  it('exige une session', async () => {
-    const services = makeServices({ getUser: vi.fn().mockResolvedValue(null) })
-    expect((await handleTestRequest(request(), env, () => services)).status).toBe(401)
-  })
-
-  it("répond 404 si aucun appareil n'est abonné", async () => {
-    const services = makeServices({ listSubscriptions: vi.fn().mockResolvedValue([]) })
-    expect((await handleTestRequest(request(), env, () => services)).status).toBe(404)
-  })
-
-  it('fonctionne sans CRON_SECRET', async () => {
-    const res = await handleTestRequest(request(), { ...env, CRON_SECRET: '' }, () => makeServices())
-    expect(res.status).toBe(200)
   })
 })
