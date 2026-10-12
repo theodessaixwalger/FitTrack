@@ -5,6 +5,10 @@ import App from './App.jsx'
 import './index.css'  // ✅ Important !
 import { AuthProvider } from './context/AuthContext'
 import { NutritionProvider } from './context/NutritionContext'
+import { registerServiceWorker } from './services/pushService'
+
+// Service worker : reçoit les notifications push, même app fermée
+registerServiceWorker()
 
 // Réglages par défaut de toutes les icônes Phosphor.
 // - weight duotone : chaque call site peut le surcharger avec weight="..."

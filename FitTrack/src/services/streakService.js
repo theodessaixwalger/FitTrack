@@ -46,13 +46,19 @@ export const getCurrentStreak = async (userId) => {
     let streak = 0
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
+    // Aujourd'hui pas encore validé : la série court jusqu'à hier et reste
+    // sauvable jusqu'à minuit (c'est ce que dit l'alerte push)
+    const lastDate = new Date(data[0].activity_date)
+    lastDate.setHours(0, 0, 0, 0)
+    const startOffset = lastDate.getTime() === today.getTime() ? 0 : 1
+
     for (let i = 0; i < data.length; i++) {
       const activityDate = new Date(data[i].activity_date)
       activityDate.setHours(0, 0, 0, 0)
-      
+
       const expectedDate = new Date(today)
-      expectedDate.setDate(today.getDate() - i)
+      expectedDate.setDate(today.getDate() - i - startOffset)
       expectedDate.setHours(0, 0, 0, 0)
       
       // Vérifier si l'activité correspond à la date attendue

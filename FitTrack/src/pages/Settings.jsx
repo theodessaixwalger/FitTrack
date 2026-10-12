@@ -2,16 +2,86 @@ import { ArrowLeft, Globe, Bell, Trash, Lock, CaretRight, X } from '@phosphor-ic
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../config/supabase'
+import {
+  DEFAULT_NOTIFICATION_PREFS,
+  isPushSupported,
+  needsHomeScreenInstall,
+  getCurrentSubscription,
+  enablePush,
+  disablePush,
+  getNotificationPreferences,
+  saveNotificationPreferences,
+  sendTestNotification
+} from '../services/pushService'
+
+function Toggle({ checked, onChange, disabled = false, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      disabled={disabled}
+      style={{
+        width: '48px',
+        height: '28px',
+        borderRadius: '14px',
+        border: 'none',
+        background: checked ? 'var(--primary)' : '#ccc',
+        position: 'relative',
+        cursor: disabled ? 'wait' : 'pointer',
+        opacity: disabled ? 0.6 : 1,
+        transition: 'all 0.3s',
+        flexShrink: 0
+      }}
+    >
+      <div style={{
+        width: '20px',
+        height: '20px',
+        borderRadius: '50%',
+        background: 'white',
+        position: 'absolute',
+        top: '4px',
+        left: checked ? '24px' : '4px',
+        transition: 'all 0.3s',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+      }} />
+    </button>
+  )
+}
+
+function SettingRow({ title, description, children }) {
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: '16px'
+    }}>
+      <div style={{ flex: 1 }}>
+        <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '2px' }}>
+          {title}
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          {description}
+        </p>
+      </div>
+      {children}
+    </div>
+  )
+}
 
 function Settings() {
   const navigate = useNavigate()
   const [language, setLanguage] = useState('fr')
-  const [notificationPrefs, setNotificationPrefs] = useState({
-    meals: true,
-    workouts: true,
-    streak: true,
-    weigh: false
-  })
+  const [notificationPrefs, setNotificationPrefs] = useState(DEFAULT_NOTIFICATION_PREFS)
+  const [pushSupported] = useState(() => isPushSupported())
+  const [pushNeedsInstall] = useState(() => needsHomeScreenInstall())
+  const [pushPermission, setPushPermission] = useState(() => (isPushSupported() ? Notification.permission : 'default'))
+  const [pushSubscribed, setPushSubscribed] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  const [pushMessage, setPushMessage] = useState(null)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -33,10 +103,18 @@ function Settings() {
   // Load settings from localStorage
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') || 'fr'
-    const savedNotifications = JSON.parse(localStorage.getItem('notificationPrefs') || '{"meals":true,"workouts":true,"streak":true,"weigh":false}')
-    
     setLanguage(savedLanguage)
-    setNotificationPrefs(savedNotifications)
+  }, [])
+
+  // Notifications : préférences (Supabase) et abonnement de cet appareil
+  useEffect(() => {
+    getNotificationPreferences()
+      .then(setNotificationPrefs)
+      .catch((error) => console.error('Erreur chargement préférences notifications:', error))
+
+    getCurrentSubscription()
+      .then((subscription) => setPushSubscribed(Boolean(subscription)))
+      .catch((error) => console.error('Erreur lecture abonnement push:', error))
   }, [])
 
   const handleLanguageChange = (lang) => {
@@ -44,10 +122,50 @@ function Settings() {
     localStorage.setItem('language', lang)
   }
 
-  const handleNotificationToggle = (key) => {
+  const handleNotificationToggle = async (key) => {
+    const previous = notificationPrefs
     const newPrefs = { ...notificationPrefs, [key]: !notificationPrefs[key] }
     setNotificationPrefs(newPrefs)
-    localStorage.setItem('notificationPrefs', JSON.stringify(newPrefs))
+    try {
+      await saveNotificationPreferences({ [key]: newPrefs[key] })
+    } catch (error) {
+      console.error('Erreur sauvegarde préférences notifications:', error)
+      setNotificationPrefs(previous)
+      setPushMessage({ type: 'error', text: "Impossible d'enregistrer la préférence." })
+    }
+  }
+
+  const handlePushToggle = async () => {
+    setPushBusy(true)
+    setPushMessage(null)
+    try {
+      if (pushSubscribed) {
+        await disablePush()
+        setPushSubscribed(false)
+      } else {
+        const { permission } = await enablePush()
+        setPushPermission(permission)
+        setPushSubscribed(permission === 'granted')
+      }
+    } catch (error) {
+      console.error('Erreur activation notifications:', error)
+      setPushMessage({ type: 'error', text: "Impossible d'activer les notifications sur cet appareil." })
+    } finally {
+      setPushBusy(false)
+    }
+  }
+
+  const handleTestNotification = async () => {
+    setPushBusy(true)
+    setPushMessage(null)
+    try {
+      await sendTestNotification()
+      setPushMessage({ type: 'success', text: 'Notification envoyée, elle devrait arriver dans quelques secondes.' })
+    } catch (error) {
+      setPushMessage({ type: 'error', text: error.message })
+    } finally {
+      setPushBusy(false)
+    }
   }
 
   const handlePasswordChange = async (e) => {
@@ -91,7 +209,7 @@ function Settings() {
 
   const handleClearCache = () => {
     if (window.confirm('Êtes-vous sûr de vouloir vider le cache ? Cela peut améliorer les performances.')) {
-      const keysToKeep = ['language', 'notificationPrefs']
+      const keysToKeep = ['language']
       const allKeys = Object.keys(localStorage)
       
       allKeys.forEach(key => {
@@ -207,183 +325,82 @@ function Settings() {
             flexDirection: 'column',
             gap: '16px'
           }}>
-            {/* Repas */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '2px' }}>
-                  Rappels de repas
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  Notifications pour logger vos repas
-                </p>
-              </div>
-              <button
-                onClick={() => handleNotificationToggle('meals')}
-                style={{
-                  width: '48px',
-                  height: '28px',
-                  borderRadius: '14px',
-                  border: 'none',
-                  background: notificationPrefs.meals ? 'var(--primary)' : '#ccc',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  flexShrink: 0
-                }}
-              >
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  background: 'white',
-                  position: 'absolute',
-                  top: '4px',
-                  left: notificationPrefs.meals ? '24px' : '4px',
-                  transition: 'all 0.3s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }} />
-              </button>
-            </div>
+            {!pushSupported ? (
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                Ce navigateur ne gère pas les notifications push.
+              </p>
+            ) : pushNeedsInstall ? (
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Sur iPhone, ajoutez d'abord FitTrack à l'écran d'accueil (bouton Partager puis
+                « Sur l'écran d'accueil »), puis ouvrez l'app depuis son icône pour activer les notifications.
+              </p>
+            ) : pushPermission === 'denied' ? (
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Les notifications sont bloquées pour FitTrack. Autorisez-les dans les réglages
+                du navigateur ou du téléphone, puis revenez ici.
+              </p>
+            ) : (
+              <>
+                <SettingRow
+                  title="Notifications push"
+                  description={pushSubscribed ? 'Activées sur cet appareil' : 'Désactivées sur cet appareil'}
+                >
+                  <Toggle
+                    checked={pushSubscribed}
+                    onChange={handlePushToggle}
+                    disabled={pushBusy}
+                    label="Notifications push sur cet appareil"
+                  />
+                </SettingRow>
+
+                {pushSubscribed && (
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={handleTestNotification}
+                    disabled={pushBusy}
+                    style={{ width: '100%' }}
+                  >
+                    Envoyer une notification de test
+                  </button>
+                )}
+              </>
+            )}
+
+            {pushMessage && (
+              <p style={{
+                fontSize: '13px',
+                color: pushMessage.type === 'error' ? 'var(--error)' : 'var(--success)'
+              }}>
+                {pushMessage.text}
+              </p>
+            )}
 
             <div style={{ height: '1px', background: 'var(--border-light)' }} />
 
-            {/* Exercices */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '2px' }}>
-                  Rappels d'exercices
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  Notifications pour vos séances
-                </p>
-              </div>
-              <button
-                onClick={() => handleNotificationToggle('workouts')}
-                style={{
-                  width: '48px',
-                  height: '28px',
-                  borderRadius: '14px',
-                  border: 'none',
-                  background: notificationPrefs.workouts ? 'var(--primary)' : '#ccc',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  flexShrink: 0
-                }}
-              >
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  background: 'white',
-                  position: 'absolute',
-                  top: '4px',
-                  left: notificationPrefs.workouts ? '24px' : '4px',
-                  transition: 'all 0.3s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }} />
-              </button>
-            </div>
+            <SettingRow
+              title="Rappels de repas"
+              description="À 13h et 20h si le déjeuner ou le dîner n'est pas saisi"
+            >
+              <Toggle
+                checked={notificationPrefs.meals_enabled}
+                onChange={() => handleNotificationToggle('meals_enabled')}
+                label="Rappels de repas"
+              />
+            </SettingRow>
 
             <div style={{ height: '1px', background: 'var(--border-light)' }} />
 
-            {/* Streak */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '2px' }}>
-                  Alertes de streak
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  Rappels pour maintenir votre série
-                </p>
-              </div>
-              <button
-                onClick={() => handleNotificationToggle('streak')}
-                style={{
-                  width: '48px',
-                  height: '28px',
-                  borderRadius: '14px',
-                  border: 'none',
-                  background: notificationPrefs.streak ? 'var(--primary)' : '#ccc',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  flexShrink: 0
-                }}
-              >
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  background: 'white',
-                  position: 'absolute',
-                  top: '4px',
-                  left: notificationPrefs.streak ? '24px' : '4px',
-                  transition: 'all 0.3s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }} />
-              </button>
-            </div>
-
-            <div style={{ height: '1px', background: 'var(--border-light)' }} />
-
-            {/* Pesée */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '2px' }}>
-                  Rappels de pesée
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  Notifications hebdomadaires
-                </p>
-              </div>
-              <button
-                onClick={() => handleNotificationToggle('weigh')}
-                style={{
-                  width: '48px',
-                  height: '28px',
-                  borderRadius: '14px',
-                  border: 'none',
-                  background: notificationPrefs.weigh ? 'var(--primary)' : '#ccc',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                  flexShrink: 0
-                }}
-              >
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  background: 'white',
-                  position: 'absolute',
-                  top: '4px',
-                  left: notificationPrefs.weigh ? '24px' : '4px',
-                  transition: 'all 0.3s',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }} />
-              </button>
-            </div>
+            <SettingRow
+              title="Alertes de série"
+              description="À 21h si rien n'est encore validé aujourd'hui"
+            >
+              <Toggle
+                checked={notificationPrefs.streak_enabled}
+                onChange={() => handleNotificationToggle('streak_enabled')}
+                label="Alertes de série"
+              />
+            </SettingRow>
           </div>
         </div>
 
