@@ -94,15 +94,22 @@ function Settings() {
 
   // Scroll to top when component mounts, ou vers la section demandée (#notifications)
   useEffect(() => {
+    const mainElement = document.querySelector('main')
+    if (!mainElement) return
+
     const target = location.hash ? document.getElementById(location.hash.slice(1)) : null
-    if (target) {
-      target.scrollIntoView({ behavior: 'instant', block: 'start' })
+    const page = target?.closest('.page')
+    if (!target || !page) {
+      mainElement.scrollTo({ top: 0 })
       return
     }
-    const mainElement = document.querySelector('main')
-    if (mainElement) {
-      mainElement.scrollTo({ top: 0, behavior: 'instant' })
-    }
+
+    // Écart mesuré depuis le haut de la page : l'animation d'entrée (translateY)
+    // décale les deux éléments d'autant, elle s'annule. On retire ensuite la
+    // hauteur de l'en-tête collant, sinon il recouvre le titre de la section.
+    const header = page.querySelector('.page-header')
+    const offset = target.getBoundingClientRect().top - page.getBoundingClientRect().top
+    mainElement.scrollTo({ top: offset - (header?.offsetHeight ?? 0) - 16 })
   }, [location.hash])
 
   // Load settings from localStorage
@@ -303,7 +310,7 @@ function Settings() {
         </div>
 
         {/* Notifications */}
-        <div className="section" id="notifications" style={{ scrollMarginTop: '16px' }}>
+        <div className="section" id="notifications">
           <h2 className="section-title">
             <Bell size={20} className="section-icon" style={{ marginRight: '8px' }} />
             Notifications
