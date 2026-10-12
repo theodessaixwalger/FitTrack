@@ -122,7 +122,7 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                 style={{
                   width: '100%',
                   padding: '14px 16px',
-                  border: '2px solid #e0e0e0',
+                  border: '2px solid var(--border-light)',
                   borderRadius: '12px',
                   fontSize: '16px',
                   fontWeight: '600',
@@ -132,8 +132,8 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                   outline: 'none'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = 'var(--primary)'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(255, 107, 53, 0.1)'
+                  e.target.style.borderColor = 'var(--m-cal)'
+                  e.target.style.boxShadow = '0 0 0 3px var(--m-cal-halo)'
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'var(--border-light)'
@@ -160,7 +160,7 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                 style={{
                   width: '100%',
                   padding: '14px 16px',
-                  border: '2px solid #e0e0e0',
+                  border: '2px solid var(--border-light)',
                   borderRadius: '12px',
                   fontSize: '16px',
                   fontWeight: '600',
@@ -170,8 +170,8 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                   outline: 'none'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#FF6B35'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(255, 107, 53, 0.1)'
+                  e.target.style.borderColor = 'var(--m-pro)'
+                  e.target.style.boxShadow = '0 0 0 3px var(--m-pro-halo)'
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'var(--border-light)'
@@ -198,7 +198,7 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                 style={{
                   width: '100%',
                   padding: '14px 16px',
-                  border: '2px solid #e0e0e0',
+                  border: '2px solid var(--border-light)',
                   borderRadius: '12px',
                   fontSize: '16px',
                   fontWeight: '600',
@@ -208,8 +208,8 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                   outline: 'none'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#4ECDC4'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(78, 205, 196, 0.1)'
+                  e.target.style.borderColor = 'var(--m-car)'
+                  e.target.style.boxShadow = '0 0 0 3px var(--m-car-halo)'
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'var(--border-light)'
@@ -236,7 +236,7 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                 style={{
                   width: '100%',
                   padding: '14px 16px',
-                  border: '2px solid #e0e0e0',
+                  border: '2px solid var(--border-light)',
                   borderRadius: '12px',
                   fontSize: '16px',
                   fontWeight: '600',
@@ -246,8 +246,8 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                   outline: 'none'
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#667EEA'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)'
+                  e.target.style.borderColor = 'var(--m-fat)'
+                  e.target.style.boxShadow = '0 0 0 3px var(--m-fat-halo)'
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'var(--border-light)'
@@ -269,7 +269,7 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
               style={{
                 flex: 1,
                 padding: '14px',
-                border: '2px solid #e0e0e0',
+                border: '2px solid var(--border-light)',
                 borderRadius: '12px',
                 fontSize: '16px',
                 fontWeight: '700',
@@ -301,24 +301,24 @@ function EditMacrosModal({ isOpen, onClose, currentGoals, onSave }) {
                 fontWeight: '700',
                 background: saving 
                   ? 'var(--border-light)' 
-                  : 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
-                color: 'white',
+                  : 'var(--accent)',
+                color: saving ? 'var(--text-secondary)' : 'var(--ink)',
                 cursor: saving ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s ease',
                 boxShadow: saving 
                   ? 'none' 
-                  : '0 4px 12px rgba(255, 107, 53, 0.3)'
+                  : 'var(--glow-accent)'
               }}
               onMouseOver={(e) => {
                 if (!saving) {
                   e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 107, 53, 0.4)'
+                  e.currentTarget.style.boxShadow = '0 0 34px rgba(212, 255, 63, 0.32)'
                 }
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)'
                 if (!saving) {
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 107, 53, 0.3)'
+                  e.currentTarget.style.boxShadow = 'var(--glow-accent)'
                 }
               }}
             >

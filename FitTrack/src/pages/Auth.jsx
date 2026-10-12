@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Envelope, Lock, User, Eye, EyeSlash } from '@phosphor-icons/react';
+import { Envelope, Lock, User, Eye, EyeSlash, WarningCircle, CheckCircle } from '@phosphor-icons/react';
 
 function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,6 +16,12 @@ function Auth() {
 
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+
+  const switchMode = (login) => {
+    setIsLogin(login);
+    setError('');
+    setSuccess('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,12 +54,12 @@ function Auth() {
         const { data, error } = await signIn(email, password);
         if (error) {
           // Vérifier si c'est une erreur d'email non confirmé
-          if (error.message.includes('Email not confirmed') || 
+          if (error.message.includes('Email not confirmed') ||
               error.message.includes('email_not_confirmed') ||
               error.code === 'email_not_confirmed') {
-            setError('📧 Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception.');
+            setError('Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception.');
           } else if (error.message.includes('Invalid login credentials')) {
-            setError('❌ Email ou mot de passe incorrect.');
+            setError('Email ou mot de passe incorrect.');
           } else {
             setError(error.message);
           }
@@ -82,258 +88,141 @@ function Auth() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--gradient-primary)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '20px',
-        padding: '40px 30px',
-        maxWidth: '400px',
-        width: '100%',
-        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)'
-      }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#333',
-            marginBottom: '10px'
-          }}>
-            {isLogin ? 'Connexion' : 'Inscription'}
-          </h1>
-          <p style={{ color: '#666', fontSize: '14px' }}>
-            {isLogin ? 'Bon retour parmi nous !' : 'Créez votre compte'}
-          </p>
+    <div className="auth-page">
+      <div className="auth-container">
+        {/* Marque */}
+        <div className="auth-brand">
+          <img src="/icon-192.png" alt="" className="auth-logo" width="80" height="80" />
+          <h1>FitTrack</h1>
+          <p>{isLogin ? 'Bon retour parmi nous !' : 'Créez votre compte'}</p>
         </div>
 
-        {/* Messages d'erreur/succès */}
-        {error && (
-          <div style={{
-            background: '#fee',
-            color: '#c33',
-            padding: '12px',
-            borderRadius: '10px',
-            marginBottom: '20px',
-            fontSize: '14px',
-            textAlign: 'center'
-          }}>
-            {error}
+        <div className="auth-card glow-card glow-accent">
+          {/* Connexion / Inscription */}
+          <div className="auth-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={isLogin}
+              className={isLogin ? 'is-active' : ''}
+              onClick={() => switchMode(true)}
+            >
+              Connexion
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!isLogin}
+              className={!isLogin ? 'is-active' : ''}
+              onClick={() => switchMode(false)}
+            >
+              Inscription
+            </button>
           </div>
-        )}
 
-        {success && (
-          <div style={{
-            background: '#efe',
-            color: '#3c3',
-            padding: '12px',
-            borderRadius: '10px',
-            marginBottom: '20px',
-            fontSize: '14px',
-            textAlign: 'center'
-          }}>
-            {success}
-          </div>
-        )}
-
-        {/* Formulaire */}
-        <form onSubmit={handleSubmit}>
-          {/* Nom complet (inscription uniquement) */}
-          {!isLogin && (
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                color: '#333',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}>
-                Pseudo
-              </label>
-              <div style={{ position: 'relative' }}>
-                <User 
-                  size={20} 
-                  style={{
-                    position: 'absolute',
-                    left: '15px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#999'
-                  }}
-                />
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Votre pseudo"
-                  style={{
-                    width: '100%',
-                    padding: '15px 15px 15px 45px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: '10px',
-                    fontSize: '16px',
-                    outline: 'none',
-                    transition: 'border-color 0.3s'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                  onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-                />
-              </div>
+          {/* Messages d'erreur/succès */}
+          {error && (
+            <div className="auth-alert is-error" role="alert">
+              <WarningCircle size={18} />
+              <span>{error}</span>
             </div>
           )}
 
-          {/* Email */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              color: '#333',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}>
-              Email
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Envelope 
-                size={20} 
-                style={{
-                  position: 'absolute',
-                  left: '15px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#999'
-                }}
-              />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre@email.com"
-                style={{
-                  width: '100%',
-                  padding: '15px 15px 15px 45px',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '10px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'border-color 0.3s'
-                }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-              />
+          {success && (
+            <div className="auth-alert is-success" role="status">
+              <CheckCircle size={18} />
+              <span>{success}</span>
             </div>
-          </div>
+          )}
 
-          {/* Mot de passe */}
-          <div style={{ marginBottom: '30px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              color: '#333',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}>
-              Mot de passe
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Lock 
-                size={20} 
-                style={{
-                  position: 'absolute',
-                  left: '15px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#999'
-                }}
-              />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                style={{
-                  width: '100%',
-                  padding: '15px 45px 15px 45px',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '10px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'border-color 0.3s'
-                }}
-                onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '15px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#999',
-                  padding: 0
-                }}
-              >
-                {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
-              </button>
+          {/* Formulaire */}
+          <form onSubmit={handleSubmit}>
+            {/* Pseudo (inscription uniquement) */}
+            {!isLogin && (
+              <div className="form-group">
+                <label htmlFor="auth-name">Pseudo</label>
+                <div className="auth-field">
+                  <User size={20} className="auth-field-icon" />
+                  <input
+                    id="auth-name"
+                    type="text"
+                    className="input"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Votre pseudo"
+                    autoComplete="nickname"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Email */}
+            <div className="form-group">
+              <label htmlFor="auth-email">Email</label>
+              <div className="auth-field">
+                <Envelope size={20} className="auth-field-icon" />
+                <input
+                  id="auth-email"
+                  type="email"
+                  className="input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="votre@email.com"
+                  autoComplete="email"
+                  inputMode="email"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Bouton submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '15px',
-              background: loading ? '#ccc' : 'var(--gradient-primary)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'transform 0.2s',
-              marginBottom: '20px'
-            }}
-            onMouseDown={(e) => !loading && (e.target.style.transform = 'scale(0.98)')}
-            onMouseUp={(e) => e.target.style.transform = 'scale(1)'}
-          >
-            {loading ? 'Chargement...' : (isLogin ? 'Se connecter' : 'S\'inscrire')}
-          </button>
+            {/* Mot de passe */}
+            <div className="form-group">
+              <label htmlFor="auth-password">Mot de passe</label>
+              <div className="auth-field">
+                <Lock size={20} className="auth-field-icon" />
+                <input
+                  id="auth-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="input has-action"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
+                />
+                <button
+                  type="button"
+                  className="auth-field-action"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                >
+                  {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
 
-          {/* Lien pour changer de mode */}
-          <div style={{ textAlign: 'center' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-                setSuccess('');
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--primary)',
-                cursor: 'pointer',
-                fontSize: '14px',
-                textDecoration: 'underline'
-              }}
-            >
-              {isLogin ? 'Pas encore de compte ? Inscrivez-vous' : 'Déjà un compte ? Connectez-vous'}
+            {/* Bouton submit */}
+            <button type="submit" className="btn auth-submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <div className="spinner auth-spinner" />
+                  Chargement...
+                </>
+              ) : (isLogin ? 'Se connecter' : 'S\'inscrire')}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        {/* Lien pour changer de mode */}
+        <button
+          type="button"
+          className="auth-switch"
+          onClick={() => switchMode(!isLogin)}
+        >
+          {isLogin ? (
+            <>Pas encore de compte ? <strong>Inscrivez-vous</strong></>
+          ) : (
+            <>Déjà un compte ? <strong>Connectez-vous</strong></>
+          )}
+        </button>
       </div>
     </div>
   );

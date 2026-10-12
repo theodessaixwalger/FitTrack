@@ -327,7 +327,8 @@ function Privacy() {
           padding: '20px'
         }}>
           <div style={{
-            background: 'white',
+            background: 'var(--surface)',
+            border: '1px solid var(--border-strong)',
             borderRadius: '20px',
             padding: '24px',
             maxWidth: '400px',
@@ -337,13 +338,13 @@ function Privacy() {
               width: '48px',
               height: '48px',
               borderRadius: '50%',
-              background: '#fee',
+              background: 'rgba(255, 92, 92, 0.12)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 16px'
             }}>
-              <WarningCircle size={24} style={{ color: '#EF4444' }} />
+              <WarningCircle size={24} style={{ color: 'var(--danger)' }} />
             </div>
             
             <h3 style={{
@@ -388,7 +389,7 @@ function Privacy() {
                 style={{
                   flex: 1,
                   padding: '12px',
-                  background: '#EF4444',
+                  background: 'var(--danger)',
                   border: 'none',
                   borderRadius: '12px',
                   color: 'white',

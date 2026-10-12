@@ -263,7 +263,7 @@ function Settings() {
                 padding: '16px 20px',
                 border: `2px solid ${language === 'fr' ? 'var(--primary)' : 'var(--border-light)'}`,
                 borderRadius: '12px',
-                background: 'white',
+                background: language === 'fr' ? 'var(--accent-ghost)' : 'var(--surface-elevated)',
                 color: language === 'fr' ? 'var(--primary)' : 'var(--text-secondary)',
                 fontWeight: '700',
                 fontSize: '15px',
@@ -284,7 +284,7 @@ function Settings() {
                 padding: '16px 20px',
                 border: `2px solid ${language === 'en' ? 'var(--primary)' : 'var(--border-light)'}`,
                 borderRadius: '12px',
-                background: 'white',
+                background: language === 'en' ? 'var(--accent-ghost)' : 'var(--surface-elevated)',
                 color: language === 'en' ? 'var(--primary)' : 'var(--text-secondary)',
                 fontWeight: '700',
                 fontSize: '15px',
@@ -486,7 +486,8 @@ function Settings() {
           padding: '20px'
         }}>
           <div style={{
-            background: '#ffffff',
+            background: 'var(--surface)',
+            border: '1px solid var(--border-strong)',
             borderRadius: '20px',
             padding: '24px',
             maxWidth: '400px',
@@ -581,11 +582,11 @@ function Settings() {
               {passwordError && (
                 <div style={{
                   padding: '12px',
-                  background: '#fee',
+                  background: 'rgba(255, 92, 92, 0.1)',
                   borderRadius: '12px',
                   marginBottom: '16px',
                   fontSize: '14px',
-                  color: '#EF4444'
+                  color: 'var(--danger)'
                 }}>
                   {passwordError}
                 </div>
@@ -594,11 +595,11 @@ function Settings() {
               {passwordSuccess && (
                 <div style={{
                   padding: '12px',
-                  background: '#d1fae5',
+                  background: 'rgba(74, 222, 128, 0.1)',
                   borderRadius: '12px',
                   marginBottom: '16px',
                   fontSize: '14px',
-                  color: '#10B981'
+                  color: 'var(--success)'
                 }}>
                   ✓ Mot de passe modifié avec succès !
                 </div>
@@ -635,7 +636,7 @@ function Settings() {
                     background: 'var(--primary)',
                     border: 'none',
                     borderRadius: '12px',
-                    color: 'white',
+                    color: 'var(--ink)',
                     fontSize: '16px',
                     fontWeight: '700',
                     cursor: changingPassword ? 'not-allowed' : 'pointer',
