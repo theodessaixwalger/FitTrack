@@ -2344,7 +2344,8 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   padding: 13px 14px;
   border: 1px solid var(--border-strong);
   border-radius: var(--r-xs);
-  font-size: 14px;
+  font-size: 16px; /* 16px minimum : sinon iOS zoome au focus */
+  min-width: 0;
   transition: all 0.25s;
   font-family: inherit;
   box-sizing: border-box;
@@ -2697,6 +2698,10 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .edit-modal-body {
   padding: 24px;
   overflow-y: auto;
+  /* overflow-y: auto rend aussi l'axe X défilable : on le bloque */
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   flex: 1;
   scrollbar-width: thin;
   scrollbar-color: var(--accent) var(--surface-elevated);

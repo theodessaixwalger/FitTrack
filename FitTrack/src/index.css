@@ -154,6 +154,10 @@ body {
 .edit-modal-body {
   padding: 24px;
   overflow-y: auto;
+  /* overflow-y: auto rend aussi l'axe X défilable : on le bloque */
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   flex: 1;
   scrollbar-width: thin;
   scrollbar-color: var(--accent) var(--surface-elevated);
@@ -406,4 +410,24 @@ body {
 @keyframes float {
   0%, 100% { transform: translateY(0px) scale(1); opacity: 0.3; }
   50% { transform: translateY(-30px) scale(1.2); opacity: 0.6; }
+}
+
+
+/* Champs date / heure sur iOS : Safari leur impose une largeur minimale
+   native qui ignore width: 100% et les fait déborder de leur conteneur. */
+input[type='date'],
+input[type='time'] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+}
+
+input[type='date']::-webkit-date-and-time-value,
+input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
 }
