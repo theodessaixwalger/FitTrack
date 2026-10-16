@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash, PencilSimple, Calendar, TrendUp, ChartBar, CaretRight } from '@phosphor-icons/react';
+import { Plus, Trash, PencilSimple, Calendar, TrendUp, ChartBar, CaretRight, CaretUp, CaretDown } from '@phosphor-icons/react';
 import { supabase } from "../config/supabase";
 import {
   getActiveProgram,
@@ -15,7 +15,9 @@ import {
   getAllExercises,
   addExerciseHistory,
   getExerciseSets,
-  updateExerciseSets
+  updateExerciseSets,
+  sortDayExercises,
+  reorderDayExercises
 } from "../services/exerciceService";
 import AddExerciseModal from "../components/AddExerciseModal";
 import EditExerciseModal from "../components/EditExerciseModal";
@@ -98,6 +100,7 @@ function Training() {
 
       // Charger les sets pour chaque exercice
       for (const day of programDays) {
+        day.exercises = sortDayExercises(day.exercises);
         if (day.exercises && day.exercises.length > 0) {
           for (const exercise of day.exercises) {
             const sets = await getExerciseSets(exercise.id);
@@ -213,6 +216,26 @@ function Training() {
     setEditDayName("");
     setEditDayOfWeek(1);
     loadData();
+  }
+
+  // Déplace un exercice d'un cran (direction -1 = monter, +1 = descendre)
+  async function handleMoveExercise(dayId, index, direction) {
+    const day = days.find(d => d.id === dayId);
+    const target = index + direction;
+    if (!day || target < 0 || target >= day.exercises.length) return;
+
+    const previousDays = days;
+    const exercises = [...day.exercises];
+    [exercises[index], exercises[target]] = [exercises[target], exercises[index]];
+    setDays(days.map(d => (d.id === dayId ? { ...d, exercises } : d)));
+
+    try {
+      await reorderDayExercises(exercises.map(e => e.id));
+    } catch (error) {
+      console.error("Erreur lors du changement d'ordre:", error);
+      setDays(previousDays);
+      alert("Impossible d'enregistrer le nouvel ordre");
+    }
   }
 
   async function handleDeleteDay(dayId) {
@@ -375,11 +398,37 @@ function Training() {
                             display: "flex",
                             alignItems: "center",
                             gap: "12px",
-                            padding: "14px 20px",
+                            padding: "10px 20px 10px 8px",
                             cursor: "pointer",
                             userSelect: "none",
                           }}
                         >
+                          {/* Flèches d'ordre */}
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ display: "flex", flexDirection: "column", flexShrink: 0, marginRight: "-6px" }}
+                          >
+                            {[
+                              { dir: -1, disabled: index === 0, label: "Monter" },
+                              { dir: 1, disabled: index === day.exercises.length - 1, label: "Descendre" },
+                            ].map(({ dir, disabled, label }) => (
+                              <button
+                                key={dir}
+                                type="button"
+                                onClick={() => handleMoveExercise(day.id, index, dir)}
+                                disabled={disabled}
+                                aria-label={`${label} ${exercise.exercise_name}`}
+                                style={{
+                                  display: "flex", padding: "3px 6px", border: "none", background: "none",
+                                  color: "var(--text-secondary)", cursor: disabled ? "default" : "pointer",
+                                  opacity: disabled ? 0.2 : 1,
+                                }}
+                              >
+                                {dir < 0 ? <CaretUp weight="bold" size={16} /> : <CaretDown weight="bold" size={16} />}
+                              </button>
+                            ))}
+                          </div>
+
                           {/* Numéro */}
                           <div style={{
                             width: "28px",

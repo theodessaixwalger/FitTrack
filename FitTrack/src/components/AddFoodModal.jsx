@@ -1,7 +1,7 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Plus, MagnifyingGlass, CookingPot, ForkKnife, Barcode, WarningCircle } from '@phosphor-icons/react'
-import { searchFoods, addFood, getFoodByBarcode, findFoodByBarcode } from '../services/foodService'
+import { searchFoods, addFood, getFoodByBarcode, findFoodByBarcode, getFoodPortions, addFoodPortion, deleteFoodPortion } from '../services/foodService'
 import { getRecipes, calculateRecipeNutrition } from '../services/recipeService'
 import { normalizeBarcode } from '../utils/barcode'
 import ProductDetails, { OffAttribution } from './ProductDetails'
@@ -51,6 +51,15 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
   const [recipeServings, setRecipeServings] = useState(draft?.recipeServings || '1')
   const [scannerOpen, setScannerOpen] = useState(false)
   const [createError, setCreateError] = useState('')
+  const [portions, setPortions] = useState([])
+  const [quantityTab, setQuantityTab] = useState('quantity') // 'quantity' | 'portion'
+  const [portionQuantity, setPortionQuantity] = useState('')
+  const [portionName, setPortionName] = useState('')
+  const [portionError, setPortionError] = useState('')
+  const [savingPortion, setSavingPortion] = useState(false)
+  // Vrai quand l'aliment vient d'être choisi : la 1re portion enregistrée devient
+  // la quantité par défaut. Faux après restauration d'un brouillon (quantité conservée).
+  const applyFirstPortionRef = useRef(false)
 
   // Sauvegarde continue du brouillon tant que la modal est ouverte
   useEffect(() => {
@@ -116,7 +125,64 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
     return v
   }
 
+  // Portions personnelles de l'aliment sélectionné
+  const selectedFoodId = selectedFood?.id
+  useEffect(() => {
+    setPortions([])
+    setQuantityTab('quantity')
+    setPortionName('')
+    setPortionQuantity('')
+    setPortionError('')
+    if (!selectedFoodId) return
+
+    let cancelled = false
+    getFoodPortions(selectedFoodId)
+      .then((data) => {
+        if (cancelled) return
+        setPortions(data)
+        // Aliment qui a des portions : on ouvre l'onglet Portion sur la première
+        if (applyFirstPortionRef.current && data.length > 0) {
+          setQuantity(String(Number(data[0].quantity)))
+          setQuantityTab('portion')
+        }
+        applyFirstPortionRef.current = false
+      })
+      .catch((error) => console.error('Erreur chargement portions:', error))
+    return () => { cancelled = true }
+  }, [selectedFoodId])
+
+  const handleSavePortion = async () => {
+    const qty = parseFloat(portionQuantity)
+    if (!portionName.trim() || !qty || qty <= 0) return
+    setSavingPortion(true)
+    setPortionError('')
+    try {
+      const portion = await addFoodPortion(selectedFood.id, portionName, qty)
+      setPortions((prev) => [...prev, portion])
+      setQuantity(String(Number(portion.quantity)))
+      setPortionName('')
+      setPortionQuantity('')
+    } catch (error) {
+      console.error('Erreur enregistrement portion:', error)
+      setPortionError("Impossible d'enregistrer la portion.")
+    } finally {
+      setSavingPortion(false)
+    }
+  }
+
+  const handleDeletePortion = async (portion) => {
+    if (!confirm(`Supprimer la portion « ${portion.name} » ?`)) return
+    try {
+      await deleteFoodPortion(portion.id)
+      setPortions((prev) => prev.filter((p) => p.id !== portion.id))
+    } catch (error) {
+      console.error('Erreur suppression portion:', error)
+      setPortionError('Impossible de supprimer la portion.')
+    }
+  }
+
   const handleSelectFood = (food) => {
+    applyFirstPortionRef.current = true
     setSelectedFood(food)
     // quantité par défaut = portion de l'emballage (produits scannés), sinon portion de référence
     setQuantity(String(food.serving_quantity || food.serving_size))
@@ -404,11 +470,30 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
               <div style={{
                 background: 'var(--bg-secondary)',
                 borderRadius: 'var(--r-md)',
-                padding: '20px',
+                padding: '16px 20px 20px',
               }}>
-                <div style={{ textAlign: 'center', marginBottom: '16px', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Quantité
+                {/* Onglets Quantité / Portion */}
+                <div role="tablist" style={{ display: 'flex', gap: '4px', padding: '4px', marginBottom: '18px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)' }}>
+                  {[{ id: 'quantity', label: 'Quantité' }, { id: 'portion', label: `Portion${portions.length ? ` (${portions.length})` : ''}` }].map(tab => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={quantityTab === tab.id}
+                      onClick={() => setQuantityTab(tab.id)}
+                      style={{
+                        flex: 1, padding: '9px', border: 'none', borderRadius: 'var(--r-xs)',
+                        fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s ease',
+                        background: quantityTab === tab.id ? 'var(--accent)' : 'transparent',
+                        color: quantityTab === tab.id ? 'var(--ink)' : 'var(--text-secondary)'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
+
+                {quantityTab === 'quantity' ? (<>
 
                 {/* Contrôle principal */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -489,6 +574,99 @@ function AddFoodModal({ isOpen, onClose, onAddFood, onAddRecipe, userId }) {
                     )
                   })}
                 </div>
+                </>) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Portions enregistrées : un appui la choisit */}
+                  {portions.length === 0 && (
+                    <p style={{ margin: '0 0 6px', fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                      Aucune portion pour cet aliment. Créez-en une ci-dessous.
+                    </p>
+                  )}
+                  {portions.map(portion => {
+                    const active = parseFloat(quantity) === Number(portion.quantity)
+                    return (
+                      <div
+                        key={portion.id}
+                        style={{
+                          display: 'flex', alignItems: 'center',
+                          borderRadius: 'var(--r-sm)',
+                          border: `1.5px solid ${active ? 'var(--accent-deep)' : 'var(--border-light)'}`,
+                          background: active ? 'var(--accent-ghost)' : 'var(--surface)',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setQuantity(String(Number(portion.quantity)))}
+                          style={{
+                            flex: 1, minWidth: 0, display: 'flex', justifyContent: 'space-between', gap: '12px',
+                            padding: '13px 4px 13px 14px', border: 'none', background: 'none', cursor: 'pointer',
+                            fontSize: '15px', fontWeight: '700', textAlign: 'left',
+                            color: active ? 'var(--accent)' : 'var(--text-primary)'
+                          }}
+                        >
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{portion.name}</span>
+                          <span style={{ flexShrink: 0, color: active ? 'var(--accent)' : 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                            {Number(portion.quantity)}{selectedFood.serving_unit}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePortion(portion)}
+                          aria-label={`Supprimer la portion ${portion.name}`}
+                          style={{ display: 'flex', padding: '13px 12px', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}
+                        >
+                          <X size={16} weight="bold" />
+                        </button>
+                      </div>
+                    )
+                  })}
+
+                  {/* Nouvelle portion */}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: portions.length ? '8px' : 0 }}>
+                    <input
+                      type="text"
+                      className="input"
+                      value={portionName}
+                      onChange={e => setPortionName(e.target.value)}
+                      placeholder="Nom, ex : 1 barre"
+                      maxLength={40}
+                      style={{ flex: 1, minWidth: 0, fontSize: '16px' }}
+                    />
+                    <div style={{ position: 'relative', width: '92px', flexShrink: 0 }}>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        className="input"
+                        value={portionQuantity}
+                        onChange={e => setPortionQuantity(sanitizeDecimal(e.target.value))}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSavePortion() }}
+                        placeholder="80"
+                        style={{ fontSize: '16px', paddingRight: '28px' }}
+                      />
+                      <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)', pointerEvents: 'none' }}>
+                        {selectedFood.serving_unit}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-small"
+                    style={{ marginTop: 0 }}
+                    onClick={handleSavePortion}
+                    disabled={savingPortion || !portionName.trim() || !(parseFloat(portionQuantity) > 0)}
+                  >
+                    <Plus size={16} weight="bold" />
+                    Créer la portion
+                  </button>
+                </div>
+                )}
+
+                {portionError && (
+                  <p style={{ margin: '10px 0 0', fontSize: '13px', fontWeight: '600', color: 'var(--danger)', textAlign: 'center' }}>
+                    {portionError}
+                  </p>
+                )}
               </div>
 
               {/* Résumé nutritionnel : une seule bande, pas de bannière colorée */}

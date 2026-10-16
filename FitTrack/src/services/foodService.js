@@ -117,3 +117,37 @@ export const getFoodById = async (id) => {
   if (error) throw error
   return data
 }
+
+// ========== PORTIONS PERSONNELLES ==========
+
+// Portions enregistrées par l'utilisateur connecté pour un aliment (RLS : les siennes uniquement)
+export const getFoodPortions = async (foodId) => {
+  const { data, error } = await supabase
+    .from('food_portions')
+    .select('id, name, quantity')
+    .eq('food_id', foodId)
+    .order('created_at')
+
+  if (error) throw error
+  return data
+}
+
+export const addFoodPortion = async (foodId, name, quantity) => {
+  const { data, error } = await supabase
+    .from('food_portions')
+    .insert({ food_id: foodId, name: name.trim(), quantity })
+    .select('id, name, quantity')
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const deleteFoodPortion = async (portionId) => {
+  const { error } = await supabase
+    .from('food_portions')
+    .delete()
+    .eq('id', portionId)
+
+  if (error) throw error
+}

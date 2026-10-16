@@ -76,6 +76,23 @@ export async function addDay(programId, dayOfWeek, name) {
   return data
 }
 
+// Ordre d'affichage : position, puis date d'ajout pour les exercices pas encore ordonnés
+export function sortDayExercises(exercises = []) {
+  return [...exercises].sort((a, b) =>
+    (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER)
+    || String(a.created_at ?? '').localeCompare(String(b.created_at ?? ''))
+  )
+}
+
+// Enregistre le nouvel ordre des exercices d'un jour (ids dans l'ordre voulu)
+export async function reorderDayExercises(exerciseIds) {
+  const results = await Promise.all(exerciseIds.map((id, position) =>
+    supabase.from('day_exercises').update({ position }).eq('id', id)
+  ))
+  const failed = results.find(r => r.error)
+  if (failed) throw failed.error
+}
+
 // Exercices
 export async function addExercise(dayId, exerciseName, setsData = null, reps = null, weight = null, weightUnit = 'kg') {
   // Si setsData est un tableau, c'est le nouveau format avec sets individuels
