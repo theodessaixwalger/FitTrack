@@ -1,7 +1,7 @@
 // src/App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import { getUserProfile } from './services/profileService';
 import MobileOnly from './components/MobileOnly';
 import Layout from './components/Layout';
@@ -112,7 +112,7 @@ function App() {
   return (
     <MobileOnly>
       <BrowserRouter>
-        <AuthProvider>
+        {/* AuthProvider : fourni une seule fois, dans main.jsx */}
           <Routes>
             {/* Route publique */}
             <Route path="/auth" element={
@@ -146,7 +146,6 @@ function App() {
             {/* Redirection par défaut */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </AuthProvider>
       </BrowserRouter>
     </MobileOnly>
   );

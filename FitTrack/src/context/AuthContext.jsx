@@ -1,6 +1,23 @@
 // src/contexts/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
+import { isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { supabase } from '../config/supabase';
+
+// Au lancement depuis l'écran d'accueil (app fermée depuis plus d'une heure),
+// le jeton a expiré et Supabase doit le renouveler. Si le réseau n'est pas encore
+// prêt, ce renouvellement échoue et getSession() renvoie « pas de session » alors
+// que l'utilisateur est bien connecté : on réessaie au lieu d'afficher la connexion.
+const SESSION_RETRY_DELAYS_MS = [300, 600, 1200, 2400];
+
+async function restoreSession() {
+  for (let attempt = 0; ; attempt++) {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (session || !isAuthRetryableFetchError(error) || attempt >= SESSION_RETRY_DELAYS_MS.length) {
+      return session;
+    }
+    await new Promise((resolve) => setTimeout(resolve, SESSION_RETRY_DELAYS_MS[attempt]));
+  }
+}
 
 const AuthContext = createContext({});
 
@@ -11,16 +28,24 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let cancelled = false;
+
+    restoreSession().then((session) => {
+      if (cancelled) return;
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // La session initiale est gérée par restoreSession() (avec ses nouvelles tentatives)
+      if (event === 'INITIAL_SESSION') return;
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Inscription SIMPLIFIÉE
@@ -97,6 +122,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
+    loading,
     signUp,
     signIn,
     signOut,
